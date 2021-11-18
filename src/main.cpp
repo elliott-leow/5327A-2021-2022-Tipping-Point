@@ -17,8 +17,9 @@ void opcontrol() {
         pros::lcd::set_text(2, "Back left: " + std::to_string(BackLeftWheel.get_position()));
         pros::lcd::set_text(3, "Front right: " + std::to_string(FrontRightWheel.get_position()));
         pros::lcd::set_text(4, "Back right: " + std::to_string(BackRightWheel.get_position()));
-        float rightWheels = CONTROLLER.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-        float leftWheels = CONTROLLER.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+        double TURN = CONTROLLER.get_analog(ANALOG_LEFT_X);
+        double STRAIGHT = CONTROLLER.get_analog(ANALOG_RIGHT_Y);
+        double leftWheels = CONTROLLER.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
         bool ringIntakeUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
         bool ringIntakeDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
@@ -44,10 +45,10 @@ void opcontrol() {
         } else if (!ringIntakeUp || !ringIntakeDown){
             RingIntake.move(0);
         }
-        FrontLeftWheel.move(leftWheels);
-        BackLeftWheel.move(leftWheels);
-        FrontRightWheel.move(rightWheels);
-        BackRightWheel.move(rightWheels);
+        FrontLeftWheel.move(STRAIGHT + TURN);
+        BackLeftWheel.move(STRAIGHT + TURN);
+        FrontRightWheel.move(STRAIGHT - TURN);
+        BackRightWheel.move(STRAIGHT - TURN);
         // } else {
         //     LIFT.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         // }
