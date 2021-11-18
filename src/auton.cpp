@@ -7,12 +7,12 @@ void move(int i) {
   BackRightWheel.tare_position();
   BackLeftWheel.tare_position();
   int target = Inertial.get_heading();
-  if (i > 0) {
+  if (i >= 0) {
     while (FrontRightWheel.get_position() < i) {
       int error = (i - FrontRightWheel.get_position())*0.1;
       int move = error > 127 ? 127 : error;
       int leftRotation = 0;
-      int rightRotation = 14;
+      int rightRotation = 0;
       // if (target-Inertial.get_heading() > 180) { //left
       //   rightRotation = 360 - (target - Inertial.get_heading())/1;
       // } else {
@@ -34,7 +34,7 @@ void move(int i) {
   if (i < 0) {
     while (FrontRightWheel.get_position() > i) {
       int error = (FrontRightWheel.get_position() - i)*0.1;
-      int move = error < -127 ? -127 : error;
+      int move = error + 30;
       FrontRightWheel.move(move);
       FrontLeftWheel.move(move);
       BackRightWheel.move(move);
@@ -45,18 +45,17 @@ void move(int i) {
 
 }
 
-void turn (int i){
-  int tolerance = 30;
+void turn (int i, int tolerance){
   Inertial.tare();
 
   while (Inertial.get_rotation() < i - tolerance || Inertial.get_rotation() > i + tolerance) {
     int error = (i-Inertial.get_rotation())*1.4;
 
-    int move = error > 127 ? 127 : error;
+    int move = error;
     FrontRightWheel.move(-move);
-        FrontLeftWheel.move(move);
-        BackRightWheel.move(-move);
-        BackLeftWheel.move(move);
+    FrontLeftWheel.move(move);
+    BackRightWheel.move(-move);
+    BackLeftWheel.move(move);
     // if (i>Inertial.get_rotation()+180 || i < Inertial.get_rotation()) {
     //   FrontRightWheel.move(move);
     //       FrontLeftWheel.move(-move);
@@ -68,10 +67,10 @@ void turn (int i){
     // }
 
   }
-
-
-
-
+  FrontRightWheel.move(0);
+  FrontLeftWheel.move(0);
+  BackRightWheel.move(0);
+  BackLeftWheel.move(0);
 
 
     // double k = 1.4;
