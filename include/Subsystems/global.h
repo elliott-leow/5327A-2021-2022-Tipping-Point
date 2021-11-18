@@ -1,17 +1,15 @@
 #include "main.h"
 
 //MOTORS
-extern pros::Motor FRONTRIGHTWHEEL;
-extern pros::Motor FRONTLEFTWHEEL;
-extern pros::Motor BACKRIGHTWHEEL;
-extern pros::Motor BACKLEFTWHEEL;
-extern pros::Motor CLAWMOTOR;
+extern pros::Motor FrontRightWheel;
+extern pros::Motor FrontLeftWheel;
+extern pros::Motor BackRightWheel;
+extern pros::Motor BackLeftWheel;
+extern pros::Motor Lift;
+extern pros::Motor RingIntake;
 
 //CONTROLLER
 extern pros::Controller CONTROLLER;
 
 //SENSORS
-extern pros::Imu INERTIAL;
-extern pros::ADIEncoder RIGHTENCODER;
-extern pros::ADIEncoder MIDDLEENCODER;
-extern pros::ADIEncoder LEFTENCODER;
+extern pros::Imu Inertial;
