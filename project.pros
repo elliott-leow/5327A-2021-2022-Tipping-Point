@@ -1,7 +1,7 @@
 {
     "py/object": "pros.conductor.project.Project",
     "py/state": {
-        "project_name": "RobotCode1",
+        "project_name": "GojoBot",
         "target": "v5",
         "templates": {
             "kernel": {
