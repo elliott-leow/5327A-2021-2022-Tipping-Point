@@ -1,6 +1,15 @@
 #include "main.h"
 #include "math.h"
 
+bool isFrontClamp = true;
+bool isBackClamp = true;
+
+bool buttonR2Prev=false;
+bool buttonL2Prev=false;
+
+bool buttonR2Pressed = false;
+bool buttonL2True = false;
+
 
 void opcontrol() {
 
@@ -8,7 +17,7 @@ void opcontrol() {
 
     TopLift.tare_position();
 
-
+    TopLift.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
 
 
@@ -27,22 +36,22 @@ void opcontrol() {
         bool liftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
         bool liftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
 
-        bool topLiftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_X);
-        bool topLiftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_B);
-        bool flipOut1 = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT);
-        bool flipOut = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT);
+        bool topLiftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
+        bool topLiftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
 
-        bool pistonTop = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+        bool pistonFront = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
 
-        bool pistonBottom = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+        bool pistonBack = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
 
-        
+
+
         if (topLiftUp) {
-            TopLift.move(127);
+            TopLift.move(-127);
         }
         else if (topLiftDown) {
-            TopLift.move(-127);
+            TopLift.move(127);
         } else if (!topLiftUp || !topLiftDown) {
+
             TopLift.move(0);
         }
 
@@ -56,15 +65,30 @@ void opcontrol() {
         } else if (!ringIntakeUp || !ringIntakeDown){
             RingIntake.move(0);
         }
-        FrontLeftWheel.move(STRAIGHT + TURN);
-        MiddleLeftWheel.move(STRAIGHT + TURN);
+
+
+        if (pistonFront&& !buttonR2Prev) {
+          FrontPiston.set_value(!isFrontClamp);
+          FrontPiston2.set_value(isFrontClamp);
+          isFrontClamp = !isFrontClamp;
+        }
+
+
+        if (pistonBack && !buttonL2Prev) {
+          BackPiston.set_value(!isBackClamp);
+          isBackClamp = !isBackClamp;
+        }
+
+        FrontLeftWheel.move(-STRAIGHT - TURN);
+        MiddleLeftWheel.move(-STRAIGHT - TURN);
         BackLeftWheel.move(STRAIGHT + TURN);
         FrontRightWheel.move(STRAIGHT - TURN);
-        MiddleLeftWheel.move(STRAIGHT - TURN);
-        BackRightWheel.move(STRAIGHT - TURN);
+        MiddleRightWheel.move(STRAIGHT - TURN);
+        BackRightWheel.move(-STRAIGHT + TURN);
 
 
-
+        buttonR2Prev = pistonFront;
+        buttonL2Prev = pistonBack;
 
     }
 }

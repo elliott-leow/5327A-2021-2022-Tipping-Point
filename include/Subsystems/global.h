@@ -10,7 +10,9 @@ extern pros::Motor BackLeftWheel;
 extern pros::Motor TopLift;
 extern pros::Motor RingIntake;
 
-extern pros::ADIDigitalOut TopPiston;
+extern pros::ADIDigitalOut FrontPiston;
+extern pros::ADIDigitalOut FrontPiston2;
+extern pros::ADIDigitalOut BackPiston;
 
 //CONTROLLER
 extern pros::Controller CONTROLLER;
