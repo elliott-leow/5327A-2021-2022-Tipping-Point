@@ -3,12 +3,24 @@
 
 bool isFrontClamp = true;
 bool isBackClamp = true;
+bool isConveyerUp = false;
+bool isConveyerDown = false;
 
 bool buttonR2Prev=false;
 bool buttonL2Prev=false;
+bool buttonR1Prev=false;
+bool buttonL1Prev=false;
 
 bool buttonR2Pressed = false;
 bool buttonL2True = false;
+bool buttonR1True=false;
+bool buttonL1True=false;
+
+
+
+
+
+
 
 
 void opcontrol() {
@@ -27,6 +39,9 @@ void opcontrol() {
         pros::lcd::set_text(2, "Back left: " + std::to_string(BackLeftWheel.get_position()));
         pros::lcd::set_text(3, "Front right: " + std::to_string(FrontRightWheel.get_position()));
         pros::lcd::set_text(4, "Back right: " + std::to_string(BackRightWheel.get_position()));
+        pros::lcd::set_text(5, "IMU: " + std::to_string(Inertial.get_heading()));
+        // double TURN = CONTROLLER.get_analog(ANALOG_RIGHT_X);
+        // double STRAIGHT = CONTROLLER.get_analog(ANALOG_LEFT_Y);
         double TURN = CONTROLLER.get_analog(ANALOG_LEFT_X);
         double STRAIGHT = CONTROLLER.get_analog(ANALOG_RIGHT_Y);
         double leftWheels = CONTROLLER.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -55,20 +70,20 @@ void opcontrol() {
             TopLift.move(0);
         }
 
-        if (ringIntakeUp) {
-
-            RingIntake.move(127);
-        }
-        else if (ringIntakeDown) {
-
-            RingIntake.move(-127);
-        } else if (!ringIntakeUp || !ringIntakeDown){
-            RingIntake.move(0);
-        }
+        // if (ringIntakeUp) {
+        //
+        //     RingIntake.move(127);
+        // }
+        // else if (ringIntakeDown) {
+        //
+        //     RingIntake.move(-127);
+        // } else if (!ringIntakeUp || !ringIntakeDown){
+        //     RingIntake.move(0);
+        // }
 
 
         if (pistonFront&& !buttonR2Prev) {
-          FrontPiston.set_value(!isFrontClamp);
+          FrontPiston.set_value(isFrontClamp);
           FrontPiston2.set_value(isFrontClamp);
           isFrontClamp = !isFrontClamp;
         }
@@ -77,6 +92,15 @@ void opcontrol() {
         if (pistonBack && !buttonL2Prev) {
           BackPiston.set_value(!isBackClamp);
           isBackClamp = !isBackClamp;
+        }
+
+        if (ringIntakeUp && !buttonR1Prev) {
+          isConveyerUp ? (RingIntake.move(100)) : RingIntake.move(0);
+          isConveyerUp = !isConveyerUp;
+        }
+        if (ringIntakeDown && !buttonL1Prev) {
+          isConveyerDown ? RingIntake.move(-100) : RingIntake.move(0);
+          isConveyerDown = !isConveyerDown;
         }
 
         FrontLeftWheel.move(-STRAIGHT - TURN);
@@ -89,6 +113,9 @@ void opcontrol() {
 
         buttonR2Prev = pistonFront;
         buttonL2Prev = pistonBack;
+        buttonR1Prev = ringIntakeUp;
+        buttonL1Prev = ringIntakeDown;
+
 
     }
 }
