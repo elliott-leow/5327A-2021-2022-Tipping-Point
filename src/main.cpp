@@ -29,7 +29,7 @@ void opcontrol() {
 
     TopLift.tare_position();
 
-    TopLift.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    TopLift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 
 
@@ -95,11 +95,11 @@ void opcontrol() {
         }
 
         if (ringIntakeUp && !buttonR1Prev) {
-          isConveyerUp ? (RingIntake.move(100)) : RingIntake.move(0);
+          isConveyerUp ? (RingIntake.move(127)) : RingIntake.move(0);
           isConveyerUp = !isConveyerUp;
         }
         if (ringIntakeDown && !buttonL1Prev) {
-          isConveyerDown ? RingIntake.move(-100) : RingIntake.move(0);
+          isConveyerDown ? RingIntake.move(-127) : RingIntake.move(0);
           isConveyerDown = !isConveyerDown;
         }
 
