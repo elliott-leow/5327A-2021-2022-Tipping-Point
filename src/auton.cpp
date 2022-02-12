@@ -5,8 +5,21 @@
 #include <iostream>
 
 #define close_turn 90
+#define auton 4
+using namespace std;
 
-int auton = 4;
+
+
+// GLOBAL POSITION VARIABLES
+double x = 0;
+double y = 0;
+// CURRENT MOTOR ENCODER TICKS
+double BL, BR, ML, MR, FL, FR;
+
+
+
+
+
 //-1 == gilbert's left side autonomous
 //0 == skills
 //1 == small and large neutral
@@ -23,9 +36,11 @@ void initialize(){
    // lv_obj_set_drag(img_src, true);
   //pros::delay(15000);
   pros::lcd::initialize();
-  pros::lcd::set_text(6, "Stop setup");
   Inertial.reset();
   pros::delay(3000);
+  pros::lcd::set_text(2, "Stop setup");
+  pros::lcd::set_text(3, to_string(auton));
+
 }
 
 void competition_initialize(){
@@ -44,7 +59,7 @@ void movespeed(int i, int angle, int speed) {
   BackLeftWheel.tare_position();
   int target = Inertial.get_heading();
 
-    while (std::abs(FrontRightWheel.get_position()) < std::abs(i)) {
+    while (abs(FrontRightWheel.get_position()) < abs(i)) {
 
       int actual_turn = 0;
       int move = i<0?-90:90;
@@ -72,8 +87,8 @@ void movespeed(int i, int angle, int speed) {
 
             float turn_difference = angle_-angle;
 
-            if(turn_difference > 180) turn_difference = 360-turn_difference;
-        		if(turn_difference < -180) turn_difference = 360+turn_difference;
+            while(turn_difference > 180) turn_difference = 360-turn_difference;
+        		while(turn_difference < -180) turn_difference = 360+turn_difference;
         		if(turn_difference < 0 && turn_difference > -180) turn_difference = -turn_difference;
 
       			//Spins in the directions which will allow bot to complete turn fastest
@@ -143,9 +158,9 @@ void move(int i) {
 
       FrontLeftWheel.move(-127-difference);
       MiddleLeftWheel.move(-127-difference);
-      BackLeftWheel.move(+127+difference);
-      FrontRightWheel.move(+127-difference);
-      MiddleRightWheel.move(+127-difference);
+      BackLeftWheel.move(127+difference);
+      FrontRightWheel.move(127-difference);
+      MiddleRightWheel.move(127-difference);
       BackRightWheel.move(-127+difference);
 
       pros::lcd::set_text(4, std::to_string(difference));
@@ -155,13 +170,13 @@ void move(int i) {
   while (FrontRightWheel.get_position() > i) {
     int difference = (Inertial.get_heading()-target)*KPBASETURN;
 
-    FrontLeftWheel.move(+127+difference);
-    MiddleLeftWheel.move(+127+difference);
+    FrontLeftWheel.move(127+difference);
+    MiddleLeftWheel.move(127+difference);
     BackLeftWheel.move(-127-difference);
 
     FrontRightWheel.move(-127+difference);
     MiddleRightWheel.move(-127+difference);
-    BackRightWheel.move(+127-difference);
+    BackRightWheel.move(127-difference);
 
     pros::lcd::set_text(4, std::to_string(difference));
   }
@@ -455,8 +470,8 @@ void turn(int angle, int tolerance, int turn_speed){
 
       angle_ = (Inertial.get_heading());
 
-      float turn_difference = angle_-angle;
-      float actual_turn = 0;
+      double turn_difference = angle_-angle;
+      double actual_turn = 0;
   		if(turn_difference > 180) turn_difference = 360-turn_difference;
   		if(turn_difference < -180) turn_difference = 360+turn_difference;
   		if(turn_difference < 0 && turn_difference > -180) turn_difference = -turn_difference;
@@ -592,6 +607,65 @@ void turnPID(int angle, double tolerance){
   pros::lcd::set_text(4, "Goal reached");
 }
 
+/*
+* @param x - the untransformed displacement vector
+* @param theta - current IMU reading for the bot IN RADIANS
+* @return - pair of doubles of the transformed displacements x, y
+*/
+
+static pair<double, double> Transform(double x, double theta) {
+  double x2 = (x * cos(theta));
+  double y2 = (x * sin(theta));
+  return make_pair(x2, y2);
+}
+
+/*
+* updates the encoder values
+* @return - double of the averaged motor displacement
+*/
+
+static double Average() {
+  double x = (BackRightWheel.get_position() - BR) + (BackLeftWheel.get_position() - BL) + (MiddleLeftWheel.get_position() - ML)
+            +(MiddleRightWheel.get_position() - MR) + (FrontLeftWheel.get_position() - FL) + (FrontRightWheel.get_position() - FR);
+
+  BR = BackRightWheel.get_position();
+  BL = BackLeftWheel.get_position();
+  ML = MiddleLeftWheel.get_position();
+  MR = MiddleRightWheel.get_position();
+  FR = FrontRightWheel.get_position();
+  FL = FrontLeftWheel.get_position();
+  return x / 6.0;
+}
+
+/*
+* Init the autonomous tracking
+* Run at thew beginning of any autonomous routine
+*/
+
+static void Setup() {
+
+
+  FrontRightWheel.tare_position();
+  FrontLeftWheel.tare_position();
+  MiddleRightWheel.tare_position();
+  MiddleLeftWheel.tare_position();
+  BackRightWheel.tare_position();
+  BackLeftWheel.tare_position();
+  x = 0; y = 0;
+  pros::lcd::set_text(5, "a;lksdjf");
+
+}
+
+void Track() {
+  double displacement = Average();
+  pair<double, double> disp = Transform(displacement, Inertial.get_heading() * M_PI / 180);
+  x += disp.first;
+  y += disp.second;
+  pros::lcd::set_text(6, "X: " + to_string(x));
+  pros::lcd::set_text(7, "Y:" + to_string(y));
+}
+
+
 void autonomous(){
 
 
@@ -713,11 +787,14 @@ if(auton == -1) {
 
     //skills
     if (auton == 4) {
+
       //go  for small neutral left
       TopLift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
       BackPiston.set_value(true);
       FrontPiston.set_value(!false);
       FrontPiston2.set_value(!false);
+
+
 
       //elevate small neutral left
       pros::delay(300);
@@ -789,7 +866,7 @@ if(auton == -1) {
       pros::delay(1000);
       turn(36,12,127);
       pros::delay(200);
-      turn(49,3,127);
+      turn(52,3,127);
       FrontPiston.set_value(!false);
       FrontPiston2.set_value(!false);
       TopLift.move_absolute(-3500,127);
@@ -828,11 +905,13 @@ if(auton == -1) {
     }
 
     //test
-    if (auton == 5) {
-       move(500);
-       TopLift.move_absolute(-10000, 127);
-       pros::delay(100);
-       move(500);
+    else {
+
+      pros::lcd::set_text(1, "running...");
+      Setup();
+      pros::lcd::set_text(1, "Init over");
+
+      while(true) Track();
     }
 
 
