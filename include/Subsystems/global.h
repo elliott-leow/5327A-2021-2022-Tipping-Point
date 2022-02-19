@@ -14,6 +14,8 @@ extern pros::ADIDigitalOut FrontPiston;
 extern pros::ADIDigitalOut FrontPiston2;
 extern pros::ADIDigitalOut BackPiston;
 
+extern pros::Vision Camera;
+
 //CONTROLLER
 extern pros::Controller CONTROLLER;
 

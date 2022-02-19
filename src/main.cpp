@@ -10,11 +10,13 @@ bool buttonR2Prev = false;
 bool buttonL2Prev = false;
 bool buttonR1Prev = false;
 bool buttonL1Prev = false;
+bool buttonAPrev = false;
 
 bool buttonR2Pressed = false;
 bool buttonL2True = false;
 bool buttonR1True = false;
 bool buttonL1True = false;
+bool buttonATrue = false;
 
 void opcontrol() {
 
@@ -34,7 +36,7 @@ void opcontrol() {
         pros::lcd::set_text(
             4, "Back right: " + std::to_string(BackRightWheel.get_position()));
         pros::lcd::set_text(5,
-                            "IMU: " + std::to_string(Inertial.get_heading()));
+                            "IMU heading: " + std::to_string(Inertial.get_heading()));
         // double TURN = CONTROLLER.get_analog(ANALOG_RIGHT_X);
         // double STRAIGHT = CONTROLLER.get_analog(ANALOG_LEFT_Y);
         double TURN = CONTROLLER.get_analog(ANALOG_LEFT_X);
@@ -57,6 +59,8 @@ void opcontrol() {
             CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
 
         bool pistonBack = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+
+        bool balance = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_A);
 
         if (topLiftUp) {
             TopLift.move(-127);
@@ -96,6 +100,27 @@ void opcontrol() {
         if (ringIntakeDown && !buttonL1Prev) {
             isConveyerDown ? RingIntake.move(-127) : RingIntake.move(0);
             isConveyerDown = !isConveyerDown;
+        }
+        if (balance && !buttonAPrev) {
+
+          int heading = Inertial.get_heading();
+          while (true) {
+            pros::lcd::set_text(6, "Button works");
+            pros::lcd::set_text(7, "IMU pitch: " + std::to_string(Inertial.get_pitch()));
+            int stage = 0;
+            STRAIGHT = -Inertial.get_pitch() * 2;
+            TURN = -(heading - Inertial.get_heading()) * 0.2;
+            FrontLeftWheel.move(-STRAIGHT - TURN);
+            MiddleLeftWheel.move(-STRAIGHT - TURN);
+            BackLeftWheel.move(STRAIGHT + TURN);
+            FrontRightWheel.move(STRAIGHT - TURN);
+            MiddleRightWheel.move(STRAIGHT - TURN);
+            BackRightWheel.move(-STRAIGHT + TURN);
+
+
+
+          }
+
         }
 
         FrontLeftWheel.move(-STRAIGHT - TURN);

@@ -5,7 +5,7 @@
 #include <iostream>
 
 #define close_turn 90
-#define auton 4
+#define auton 5
 using namespace std;
 
 // GLOBAL POSITION VARIABLES
@@ -15,25 +15,25 @@ double y = 0;
 double BL, BR, ML, MR, FL, FR;
 
 //-1 == gilbert's left side autonomous
-// 0 == skills
+// 0 == elims
 // 1 == small and large neutral
 // 2 == winpoint auton
 // 3 == do nothing
 // 4 == prog skills
 // double KPBASETURN = 0.2;
 double KPBASETURN = 0.2;
-// LV_IMG_DECLARE(gojo);
+//LV_IMG_DECLARE(gojo);
 void initialize() {
-    // lv_obj_t * img_src = lv_img_create(lv_scr_act(), NULL); /*Crate an image
-    // object*/ lv_img_set_src(img_src, &gojo);  /*Set the created file as image
-    // (a red fl  ower)*/ lv_obj_set_pos(img_src, 0, 0);      /*Set the
-    // positions*/ lv_obj_set_drag(img_src, true);
+//     lv_obj_t * img_src = lv_img_create(lv_scr_act(), NULL); /*Crate an image
+//     // object*/ lv_img_set_src(img_src, &gojo);  /*Set the created file as image
+//     // (a red fl  ower)*/ lv_obj_set_pos(img_src, 0, 0);      /*Set the
+//     // positions*/ lv_obj_set_drag(img_src, true);
     // pros::delay(15000);
     pros::lcd::initialize();
     Inertial.reset();
     pros::delay(3000);
-    pros::lcd::set_text(2, "Stop setup");
-    pros::lcd::set_text(3, to_string(auton));
+    //pros::lcd::set_text(2, "Stop setup");
+    //pros::lcd::set_text(3, to_string(auton));
 }
 
 void competition_initialize() { initialize(); }
@@ -510,6 +510,31 @@ void turn(int angle, int tolerance, int turn_speed) {
     pros::lcd::set_text(4, "Goal reached");
 }
 
+/*
+ * Turns the robot in place until it reaches the goal
+ * @param goal - color of goal, 0 is red, 1 is blue, 2 is yellow
+ * @param direction - if the goal is to the left or right of the robot
+ * @return - double of the averaged motor displacement
+ */
+//
+// void turnToGoal(int color) {
+//     pros::vision_object_s_t rtn = Camera.get_by_sig(0, color);
+//
+//     int actual_turn = 0;
+//     int offset = rtn.x_middle_coord - 158;
+//     while ((rtn.x_middle_coord > 158+1 || rtn.x_middle_coord < 158-1) && actual_turn < 2) {
+//
+//       int offset = rtn.x_middle_coord - 158;
+//       actual_turn = offset;
+//       FrontLeftWheel.move(-actual_turn);
+//       MiddleLeftWheel.move(-actual_turn);
+//       BackLeftWheel.move(actual_turn);
+//       FrontRightWheel.move(-actual_turn);
+//       MiddleRightWheel.move(-actual_turn);
+//       BackRightWheel.move(actual_turn);
+//     }
+// }
+
 void turnPID(int angle, double tolerance) {
 
     double upperAngleBound = angle + tolerance;
@@ -519,12 +544,12 @@ void turnPID(int angle, double tolerance) {
 
     double angle_ = (Inertial.get_heading());
 
-    int kU = 5;
-    int tU = 2;
+    //int kU = 5;
+    //int tU = 2;
     // double Pu = 0.7;
-    double kP = 0.2 * kU; // og 0.8
-    double kI = 0;        // 1.2*kU/tU;//kU*2 / Pu;
-    double kD = 1 * kU * tU;
+    double kP = 1.9; // og 0.8
+    double kI = 0.00004;        // 1.2*kU/tU;//kU*2 / Pu;
+    double kD = 0;
 
     double turn_difference = 0;
     // auto time = 0;
@@ -551,8 +576,7 @@ void turnPID(int angle, double tolerance) {
     // if(upperAngleBound > 360){
     // 	upperAngleBound = upperAngleBound - 360;
     // 	specialUp = true;}
-    struct timeval tp;
-    long cycles = 0;
+    float actual_turn = 127;
     while ((specialDown == true &&
             ((angle_ < lowerAngleBound && angle_ > angle + 180) ||
              (angle_ > upperAngleBound && angle_ < angle + 180))) ||
@@ -560,11 +584,12 @@ void turnPID(int angle, double tolerance) {
             ((angle_ > upperAngleBound && angle_ < angle - 180) ||
              (angle_ < lowerAngleBound && angle_ > angle - 180))) ||
            ((specialUp == false && specialDown == false) &&
-            (angle_ > upperAngleBound || angle_ < lowerAngleBound))) {
+            (angle_ > upperAngleBound || angle_ < lowerAngleBound))
+          || actual_turn > 2 || actual_turn < -2) {
         angle_ = (Inertial.get_heading());
 
         turn_difference = angle_ - angle;
-        float actual_turn = 0;
+        actual_turn = 0;
         if (turn_difference > 180)
             turn_difference = 360 - turn_difference;
         if (turn_difference < -180)
@@ -605,13 +630,11 @@ void turnPID(int angle, double tolerance) {
         pros::lcd::set_text(1, std::to_string(angle_));
         pros::lcd::set_text(2, std::to_string(angle));
         pros::lcd::set_text(3, std::to_string(actual_turn));
+        //pros::lcd::set_text(3, std::to_string(actual_turn));
 
         pros::delay(5);
         prevError = turn_difference;
         integral += turn_difference;
-        if (Inertial.get_heading() > lowerAngleBound &&
-            Inertial.get_heading() < upperAngleBound)
-            cycles++;
         // auto time = std::chrono::system_clock::now();
     }
 
@@ -719,7 +742,7 @@ void autonomous() {
         move(-500, 135);
         turn(360 - 46, 3, 127);
         pros::delay(500);
-        move(1500, 360 - 38);
+        move(1300, 360 - 38);
         FrontPiston.set_value(!true);
         FrontPiston2.set_value(!true);
         move(-2300, 360 - 38);
@@ -754,8 +777,8 @@ void autonomous() {
         // Inertial.tare();
         BackPiston.set_value(true);
         pros::delay(200);
-        RingIntake.move_relative(500, 100);
-        pros::delay(500);
+        //RingIntake.move_relative(600, 127);
+        //'pros::delay(500);
         BackPiston.set_value(false);
         pros::delay(500);
         pros::delay(1000);
@@ -772,13 +795,13 @@ void autonomous() {
         FrontPiston.set_value(!false);
         FrontPiston2.set_value(!false);
         pros::delay(100);
-        RingIntake.move_relative(1200, 100);
+        RingIntake.move_relative(1200, 127);
         pros::delay(1000);
         move(600, 0);
         pros::delay(100);
         BackPiston.set_value(false);
         move(180, 0);
-        move(1820, 56);
+        move(1980, 56);
         FrontPiston.set_value(!true);
         FrontPiston2.set_value(!true);
         pros::delay(100);
@@ -800,14 +823,14 @@ void autonomous() {
         pros::delay(300);
         move(500, 90);
         RingIntake.move(127);
-        move(1800, 118);
+        move(1800, 119);
         FrontPiston.set_value(!true);
         FrontPiston2.set_value(!true);
-        TopLift.move_absolute(-4000, 127);
+        TopLift.move_absolute(-4100, 127);
         pros::delay(700);
-        move(2800, 116);
+        move(2800, 113);
 
-        TopLift.move_absolute(-2500, 127);
+        TopLift.move_absolute(-2500, 128);
         pros::delay(1000);
 
         FrontPiston.set_value(!false);
@@ -816,22 +839,23 @@ void autonomous() {
         pros::delay(300);
 
         // align for large middge neutral
-        move(-500, 116);
+        move(-600, 117);
 
         TopLift.move_absolute(10, 127);
         pros::delay(500);
-        turn(225, 3, 127);
-        move(1500, 225);
+        turn(236, 3, 127);
+        move(50, 237);
+        move(1500, 218);
         FrontPiston.set_value(!true);
         FrontPiston2.set_value(!true);
         //  TopLift.move_absolute(-1000,127);
 
-        move(1900, 225);
+        move(1900, 226);
 
         pros::delay(100);
-        turn(300, 3, 127);
+        turn(301, 3, 127);
         // elevate large neutral goal
-        TopLift.move_absolute(-3500, 127);
+        TopLift.move_absolute(-3500, 128);
         pros::delay(1500);
         move(1150, 300);
         TopLift.move_absolute(-2500, 127);
@@ -841,56 +865,69 @@ void autonomous() {
         FrontPiston2.set_value(!false);
         movespeed(-150, 80);
         TopLift.move_absolute(-2500, 60);
-        move(-500, 300);
+        move(-500, 301);
         // turn(1,3,127);
         TopLift.move_absolute(10, 127);
         // go to right neutral goal
-        move(-1400, 90);
+        move(-1400, 91);
         pros::delay(300);
         turn(87, 3, 127);
         pros::delay(300);
-        move(500, 82);
+        move(500, 83);
         FrontPiston.set_value(!true);
         FrontPiston2.set_value(!true);
         pros::delay(300);
-        move(1000, 60);
+        move(1000, 61);
         pros::delay(300);
-        turn(42, 14, 127);
+        turn(41, 14, 127);
         // elevate right small neutral
         TopLift.move_absolute(-3300, 127);
         pros::delay(1700);
-        move(2150, 52);
+        move(1900, 56);
 
         TopLift.move_absolute(-2500, 127);
         pros::delay(1000);
-        turn(36, 12, 127);
-        pros::delay(200);
-        turn(52, 3, 127);
+        //turn(36, 12, 127);
+        //pros::delay(200);
+        //turn(52, 3, 127);
         FrontPiston.set_value(!false);
         FrontPiston2.set_value(!false);
         TopLift.move_absolute(-3500, 127);
         // pros::delay(300);
 
-        move(-600, 116);
+        move(-400, 117);
         TopLift.move_absolute(10, 127);
-        turn(160, 3, 127);
+        turn(161, 3, 127);
         pros::delay(300);
-        move(100, 180);
-        move(1200, 90);
+        move(1600, 161);
+        turn(49,3,127);
+        move(1600, 38);
 
-        turn(60, 3, 127);
-        move(1400, 60);
+        //turn(25, 3, 127);
+        //move(1200, 25);
         FrontPiston.set_value(!true);
         FrontPiston2.set_value(!true);
-        move(-4000, 90);
-        turn(315, 3, 127);
+        move(-4600, 88);
+        turn(290, 3, 127);
         TopLift.move_absolute(-3500, 127);
         pros::delay(1200);
 
-        move(1300, 315);
+        move(1500, 296);
+        //movespeed(150,60);
         FrontPiston.set_value(!false);
         FrontPiston2.set_value(!false);
-        move(-800, 315);
+        move(-800, 296);
+        TopLift.move_absolute(10, 127);
+        move(-3800,280);
+        //pros::delay(300);
+        //turn(185,3,127);
+        //pros::delay(300);
+        //move(800,180);
+        //FrontPiston.set_value(!true);
+        //FrontPiston2.set_value(!true);
+        //pros::delay(100);
+        //TopLift.move_absolute(-300, 127);
+        //move(3500,90);
         BackPiston.set_value(false);
 
         // pros::delay(300);
@@ -899,6 +936,16 @@ void autonomous() {
         //  turnPID(270,1);
         //  pros::delay(500);
         //  turnPID(180,1);
+    }
+    if (auton == 5) {
+      turnPID(90, 2);
+      pros::delay(500);
+      pros::lcd::set_text(1, std::to_string(Inertial.get_heading()));
+      turnPID(270, 2);
+      pros::delay(500);
+      pros::lcd::set_text(1, std::to_string(Inertial.get_heading()));
+      turnPID(45, 2);
+
     }
 
     // test
