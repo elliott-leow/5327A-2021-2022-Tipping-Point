@@ -10,27 +10,15 @@ bool buttonR2Prev = false;
 bool buttonL2Prev = false;
 bool buttonR1Prev = false;
 bool buttonL1Prev = false;
-<<<<<<< Updated upstream
 bool buttonAPrev = false;
-=======
-<<<<<<< HEAD
-bool buttonAPrev = false;
-=======
->>>>>>> 31552a69bb3d86b0772a3187ba7a3a36a07a09e6
->>>>>>> Stashed changes
 
 bool buttonR2Pressed = false;
 bool buttonL2True = false;
 bool buttonR1True = false;
 bool buttonL1True = false;
-<<<<<<< Updated upstream
 bool buttonATrue = false;
-=======
-<<<<<<< HEAD
-bool buttonATrue = false;
-=======
->>>>>>> 31552a69bb3d86b0772a3187ba7a3a36a07a09e6
->>>>>>> Stashed changes
+
+bool yoru = false;
 
 void opcontrol() {
 
@@ -50,15 +38,7 @@ void opcontrol() {
         pros::lcd::set_text(
             4, "Back right: " + std::to_string(BackRightWheel.get_position()));
         pros::lcd::set_text(5,
-<<<<<<< Updated upstream
                             "IMU heading: " + std::to_string(Inertial.get_heading()));
-=======
-<<<<<<< HEAD
-                            "IMU heading: " + std::to_string(Inertial.get_heading()));
-=======
-                            "IMU: " + std::to_string(Inertial.get_heading()));
->>>>>>> 31552a69bb3d86b0772a3187ba7a3a36a07a09e6
->>>>>>> Stashed changes
         // double TURN = CONTROLLER.get_analog(ANALOG_RIGHT_X);
         // double STRAIGHT = CONTROLLER.get_analog(ANALOG_LEFT_Y);
         double TURN = CONTROLLER.get_analog(ANALOG_LEFT_X);
@@ -66,32 +46,36 @@ void opcontrol() {
         double leftWheels =
             CONTROLLER.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
-        bool ringIntakeUp =
-            CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
-        bool ringIntakeDown =
-            CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+        bool ringIntakeUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R1)
+          || CONTROLLER2.get_digital(pros::E_CONTROLLER_DIGITAL_R1);;
+        bool ringIntakeDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
+          || CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
         bool liftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
         bool liftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
 
-        bool topLiftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
-        bool topLiftDown =
-            CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
+        bool topLiftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_UP)
+          || CONTROLLER2.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
+        bool topLiftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)
+          || CONTROLLER2.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
 
         bool pistonFront =
             CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
 
         bool pistonBack = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
 
-<<<<<<< Updated upstream
         bool balance = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_A);
 
-=======
-<<<<<<< HEAD
-        bool balance = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_A);
+        if (yoru) {
+          TURN = CONTROLLER.get_analog(ANALOG_RIGHT_X);
+          STRAIGHT = CONTROLLER.get_analog(ANALOG_LEFT_Y);
+          ringIntakeUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_A);
+          balance = false;
+          topLiftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+          topLiftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+          pistonFront =
+              CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+        }
 
-=======
->>>>>>> 31552a69bb3d86b0772a3187ba7a3a36a07a09e6
->>>>>>> Stashed changes
         if (topLiftUp) {
             TopLift.move(-127);
         } else if (topLiftDown) {
@@ -114,7 +98,7 @@ void opcontrol() {
 
         if (pistonFront && !buttonR2Prev) {
             FrontPiston.set_value(isFrontClamp);
-            FrontPiston2.set_value(isFrontClamp);
+            //FrontPiston2.set_value(isFrontClamp);
             isFrontClamp = !isFrontClamp;
         }
 
@@ -130,10 +114,6 @@ void opcontrol() {
         if (ringIntakeDown && !buttonL1Prev) {
             isConveyerDown ? RingIntake.move(-127) : RingIntake.move(0);
             isConveyerDown = !isConveyerDown;
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> Stashed changes
         }
         if (balance && !buttonAPrev) {
 
@@ -155,11 +135,6 @@ void opcontrol() {
 
           }
 
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> 31552a69bb3d86b0772a3187ba7a3a36a07a09e6
->>>>>>> Stashed changes
         }
 
         FrontLeftWheel.move(-STRAIGHT - TURN);
