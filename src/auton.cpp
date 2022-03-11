@@ -6,8 +6,10 @@
 
 
 #define close_turn 90
-#define auton 5
+#define auton 7
+#define M_PI 3.14159265
 using namespace std;
+using namespace pros;
 
 // GLOBAL POSITION VARIABLES
 double x = 0;
@@ -21,7 +23,8 @@ double BL, BR, ML, MR, FL, FR;
 // 2 == winpoint auton
 // 3 == do nothing
 // 4 == prog skills
-// 5 = test
+// 5 = left side neutral rush w/ pos tracking
+// 6 == right side neutral rush 
 // double KPBASETURN = 0.2;
 double KPBASETURN = 0.2;
 //LV_IMG_DECLARE(gojo);
@@ -60,12 +63,13 @@ static pair<double, double> Transform(double x, double theta) {
  */
 
 static double Average() {
-    double x1 = -(BackRightWheel.get_position() - BR) +
+    double x1 = (-(BackRightWheel.get_position() - BR) +
                (BackLeftWheel.get_position() - BL) -
                (MiddleLeftWheel.get_position() - ML) +
                (MiddleRightWheel.get_position() - MR) -
                (FrontLeftWheel.get_position() - FL) +
-               (FrontRightWheel.get_position() - FR);
+               (FrontRightWheel.get_position() - FR));
+
 
     BR = BackRightWheel.get_position();
     BL = BackLeftWheel.get_position();
@@ -101,7 +105,7 @@ void Track() {
         Transform(displacement, Inertial.get_heading() * M_PI / 180);
     x += disp.first;
     y += disp.second;
-    pros::lcd::set_text(6, "X: " + to_string(x));
+    pros::lcd::set_text(6, "X: " + to_string(x) + ", " + to_string(atan(y/x)));
     pros::lcd::set_text(7, "Y:" + to_string(y));
 }
 
@@ -109,15 +113,17 @@ void competition_initialize() { initialize(); }
 
 double saveHeading = 0;
 
-void movespeed(int i, int angle, int speed) {
+void move(int i, int angle, double speed) {
     // i = motor speed, angle = angle the robot should turn towards while moving
-    FrontRightWheel.tare_position();
-    FrontLeftWheel.tare_position();
-    BackRightWheel.tare_position();
-    BackLeftWheel.tare_position();
+
+    // FrontRightWheel.tare_position();
+    // FrontLeftWheel.tare_position();
+    // BackRightWheel.tare_position();
+    // BackLeftWheel.tare_position();
+    int initialPos = FrontRightWheel.get_position();
     int target = Inertial.get_heading();
 
-    while (abs(FrontRightWheel.get_position()) < abs(i)) {
+    while (std::abs(FrontRightWheel.get_position()-initialPos) < std::abs(i)) {
 
         int actual_turn = 0;
         int move = i < 0 ? -90 : 90;
@@ -149,9 +155,9 @@ void movespeed(int i, int angle, int speed) {
 
             float turn_difference = angle_ - angle;
 
-            while (turn_difference > 180)
+            if (turn_difference > 180)
                 turn_difference = 360 - turn_difference;
-            while (turn_difference < -180)
+            if (turn_difference < -180)
                 turn_difference = 360 + turn_difference;
             if (turn_difference < 0 && turn_difference > -180)
                 turn_difference = -turn_difference;
@@ -182,112 +188,21 @@ void movespeed(int i, int angle, int speed) {
 
             c = -c;
         }
+        Track();
+        move = move > 127 ? 127 : move;
+        move = move < 127 ? -127 : move;
+        FrontLeftWheel.move(-move - actual_turn);
+        MiddleLeftWheel.move(-move - actual_turn);
+        BackLeftWheel.move(+move + actual_turn);
+        FrontRightWheel.move(+move - actual_turn);
+        MiddleRightWheel.move(+move - actual_turn);
+        BackRightWheel.move(-move + actual_turn);
 
-        FrontLeftWheel.move(-move - actual_turn + speed);
-        MiddleLeftWheel.move(-move - actual_turn + speed);
-        BackLeftWheel.move(+move + actual_turn - speed);
-        FrontRightWheel.move(+move - actual_turn - speed);
-        MiddleRightWheel.move(+move - actual_turn - speed);
-        BackRightWheel.move(-move + actual_turn + speed);
-
-        // move robot foward and turn at same time
-        //  FrontRightWheel.move(move-actual_turn+c);
-        //  FrontLeftWheel.move(move+actual_turn-c);
-        //  BackRightWheel.move(move-actual_turn+c);
-        //  BackLeftWheel.move(move+actual_turn-c);
     }
 
     // Moves the wheels at a certain "move" speed
     FrontRightWheel.move(0);
     FrontLeftWheel.move(0);
-    BackRightWheel.move(0);
-    BackLeftWheel.move(0);
-}
-
-void move(int i) {
-    // i = motor speed
-    int target = Inertial.get_heading();
-    FrontRightWheel.tare_position();
-    FrontLeftWheel.tare_position();
-    BackRightWheel.tare_position();
-    BackLeftWheel.tare_position();
-    if (i > 0) {
-        while (FrontRightWheel.get_position() < i) {
-            int difference = (Inertial.get_heading() - target) * KPBASETURN;
-
-            FrontLeftWheel.move(-127 - difference);
-            MiddleLeftWheel.move(-127 - difference);
-            BackLeftWheel.move(127 + difference);
-            FrontRightWheel.move(127 - difference);
-            MiddleRightWheel.move(127 - difference);
-            BackRightWheel.move(-127 + difference);
-
-            pros::lcd::set_text(4, std::to_string(difference));
-        }
-    }
-    if (i < 0) {
-        while (FrontRightWheel.get_position() > i) {
-            int difference = (Inertial.get_heading() - target) * KPBASETURN;
-
-            FrontLeftWheel.move(127 + difference);
-            MiddleLeftWheel.move(127 + difference);
-            BackLeftWheel.move(-127 - difference);
-
-            FrontRightWheel.move(-127 + difference);
-            MiddleRightWheel.move(-127 + difference);
-            BackRightWheel.move(127 - difference);
-
-            pros::lcd::set_text(4, std::to_string(difference));
-        }
-    }
-    FrontRightWheel.move(0);
-    FrontLeftWheel.move(0);
-    MiddleRightWheel.move(0);
-    MiddleLeftWheel.move(0);
-    BackRightWheel.move(0);
-    BackLeftWheel.move(0);
-}
-
-void movespeed(int i, int speed) {
-    // i = motor speed
-    int target = Inertial.get_heading();
-    FrontRightWheel.tare_position();
-    FrontLeftWheel.tare_position();
-    BackRightWheel.tare_position();
-    BackLeftWheel.tare_position();
-    if (i > 0) {
-        while (FrontRightWheel.get_position() < i) {
-            int difference = (Inertial.get_heading() - target) * KPBASETURN;
-
-            FrontLeftWheel.move(-127 - difference + speed);
-            MiddleLeftWheel.move(-127 - difference + speed);
-            BackLeftWheel.move(+127 + difference - speed);
-            FrontRightWheel.move(+127 - difference - speed);
-            MiddleRightWheel.move(+127 - difference - speed);
-            BackRightWheel.move(-127 + difference + speed);
-
-            pros::lcd::set_text(4, std::to_string(difference));
-        }
-    }
-    if (i < 0) {
-        while (FrontRightWheel.get_position() > i) {
-            int difference = (Inertial.get_heading() - target) * KPBASETURN;
-
-            FrontLeftWheel.move(+127 + difference - speed);
-            MiddleLeftWheel.move(+127 + difference - speed);
-            BackLeftWheel.move(-127 - difference + speed);
-
-            FrontRightWheel.move(-127 + difference + speed);
-            MiddleRightWheel.move(-127 + difference + speed);
-            BackRightWheel.move(+127 - difference - speed);
-
-            pros::lcd::set_text(4, std::to_string(difference));
-        }
-    }
-    FrontRightWheel.move(0);
-    FrontLeftWheel.move(0);
-    MiddleRightWheel.move(0);
-    MiddleLeftWheel.move(0);
     BackRightWheel.move(0);
     BackLeftWheel.move(0);
 }
@@ -374,109 +289,6 @@ void move(int i, int angle) {
         MiddleRightWheel.move(+move - actual_turn);
         BackRightWheel.move(-move + actual_turn);
 
-
-
-        // move robot foward and turn at same time
-        //  FrontRightWheel.move(move-actual_turn+c);
-        //  FrontLeftWheel.move(move+actual_turn-c);
-        //  BackRightWheel.move(move-actual_turn+c);
-        //  BackLeftWheel.move(move+actual_turn-c);
-    }
-
-    // Moves the wheels at a certain "move" speed
-    FrontRightWheel.move(0);
-    FrontLeftWheel.move(0);
-    BackRightWheel.move(0);
-    BackLeftWheel.move(0);
-}
-
-void moveLift(int i, int angle, int lift) {
-    // i = motor speed, angle = angle the robot should turn towards while moving
-    TopLift.move_relative(lift, 127);
-    FrontRightWheel.tare_position();
-    FrontLeftWheel.tare_position();
-    BackRightWheel.tare_position();
-    BackLeftWheel.tare_position();
-    int target = Inertial.get_heading();
-
-    while (std::abs(FrontRightWheel.get_position()) < std::abs(i)) {
-
-        int actual_turn = 0;
-        int move = i < 0 ? -90 : 90;
-        int tolerance = 3;
-        int upperAngleBound = angle + tolerance;
-        int lowerAngleBound = angle - tolerance;
-
-        int angle_ = (Inertial.get_heading());
-        bool specialDown = false;
-        bool specialUp = false;
-        if (lowerAngleBound < 0) {
-            lowerAngleBound = lowerAngleBound + 360;
-            specialDown = true;
-        }
-        if (upperAngleBound > 360) {
-            upperAngleBound = upperAngleBound - 360;
-            specialUp = true;
-        }
-        // if the robot is not at the heading
-        if ((specialDown == true &&
-             ((angle_ < lowerAngleBound && angle_ > angle + 180) ||
-              (angle_ > upperAngleBound && angle_ < angle + 180))) ||
-            (specialUp == true &&
-             ((angle_ > upperAngleBound && angle_ < angle - 180) ||
-              (angle_ < lowerAngleBound && angle_ > angle - 180))) ||
-            ((specialUp == false && specialDown == false) &&
-             (angle_ > upperAngleBound || angle_ < lowerAngleBound))) {
-            angle_ = (Inertial.get_heading());
-
-            float turn_difference = angle_ - angle;
-
-            if (turn_difference > 180)
-                turn_difference = 360 - turn_difference;
-            if (turn_difference < -180)
-                turn_difference = 360 + turn_difference;
-            if (turn_difference < 0 && turn_difference > -180)
-                turn_difference = -turn_difference;
-
-            // Spins in the directions which will allow bot to complete turn
-            // fastest
-            if (turn_difference > 180)
-                turn_difference = 360 - turn_difference;
-
-            // Slows down if close to goal heading and stays fast if it is away
-            int turn_speed = 90;
-            if (turn_difference < close_turn) {
-                actual_turn = (turn_speed *
-                               ((turn_difference / (close_turn)) + KPBASETURN));
-            } else {
-                actual_turn = turn_speed;
-            }
-
-            /*Special conditions if angle bounds are less than 0 or greater than
-               360 Neccesary for proper turning and calculation*/
-            if ((angle > angle_ + 180) ||
-                (angle > angle_ - 180 && angle_ > 180 && angle < 180) ||
-                (angle < angle_ && angle_ - angle < 180))
-                actual_turn = -actual_turn;
-        }
-        int c = 5;
-        if (i < 0) {
-
-            c = -c;
-        }
-
-        FrontLeftWheel.move(-move - actual_turn);
-        MiddleLeftWheel.move(-move - actual_turn);
-        BackLeftWheel.move(+move + actual_turn);
-        FrontRightWheel.move(+move - actual_turn);
-        MiddleRightWheel.move(+move - actual_turn);
-        BackRightWheel.move(-move + actual_turn);
-
-        // move robot foward and turn at same time
-        //  FrontRightWheel.move(move-actual_turn+c);
-        //  FrontLeftWheel.move(move+actual_turn-c);
-        //  BackRightWheel.move(move-actual_turn+c);
-        //  BackLeftWheel.move(move+actual_turn-c);
     }
 
     // Moves the wheels at a certain "move" speed
@@ -558,7 +370,7 @@ void turn(int angle, int tolerance, int turn_speed, int PIDRATIO) {
         if (turn_difference < close_turn) {
 
             actual_turn =
-                (turn_speed * ((turn_difference / (close_turn)) ))* PIDRATIO + KPBASETURN;
+                (turn_speed * ((turn_difference / (close_turn)) ))*1.6* PIDRATIO + KPBASETURN;
         } else {
             actual_turn = turn_speed;
         }
@@ -678,28 +490,35 @@ void turn(int angle, int tolerance, int turn_speed) {
  * @return - double of the averaged motor displacement
  */
 //
-int completeGoal(int color) {
-    pros::vision_object_s_t rtn = Camera.get_by_sig(0, color);
 
+int completeGoal(int color) {
+    pros::lcd::set_text(1, "complete goal");
+    vision_object_s_t rtn = Camera.get_by_sig(0, 2);
+    //pros::lcd::set_text(2, "");
     int actual_turn = 0;
     int width = 316;
     int height = 212;
     int center = width/2;
     int object = rtn.x_middle_coord;
+    pros::lcd::set_text(2, to_string(center - object));
     return object - center;
-    // while ((rtn.x_middle_coord > 158+1 || rtn.x_middle_coord < 158-1) && actual_turn < 2) {
-    //
-    //   int offset = rtn.x_middle_coord - 158;
-    //   actual_turn = offset;
-    //
-    //   FrontLeftWheel.move(-actual_turn);
-    //   MiddleLeftWheel.move(-actual_turn);
-    //   BackLeftWheel.move(actual_turn);
-    //   FrontRightWheel.move(-actual_turn);
-    //   MiddleRightWheel.move(-actual_turn);
-    //   BackRightWheel.move(actual_turn);
-    // }
+    
 }
+void turnToGoal(int color, int tolerance, int speed) {
+    int error = completeGoal(color);
+    while (true) {
+        error = completeGoal(color);
+        int actual_turn = error * 0.4; 
+        FrontLeftWheel.move(-actual_turn);
+        MiddleLeftWheel.move(-actual_turn);
+        BackLeftWheel.move(actual_turn);
+        FrontRightWheel.move(-actual_turn);
+        MiddleRightWheel.move(-actual_turn);
+        BackRightWheel.move(actual_turn);
+    }
+}
+
+
 
 void turnPID(int angle, double tolerance) {
 
@@ -815,30 +634,33 @@ void rDelay(int ms) {
     while(true)
     {
         Track();
-        if(std::chrono::steady_clock::now() - start < std::chrono::milliseconds(ms))
+        if(std::chrono::steady_clock::now() - start > std::chrono::milliseconds(ms))
             break;
     }
 }
 
-void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
+void moveCoords(int x1, int y1, int fowardSpeed, bool backwards, bool PID) {
     int angle = 0;
-    if (x1-x == 0) angle = 90;
-    angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
+    if (x1-x == 0) angle = 0;
+    else angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
     //if (!simul) turnPID(angle, 3);
-    int moveTolerance = 50;
-    int dx = x - x1;
-    int dy = y - y1;
-    while (abs(x - x1) > moveTolerance && abs(y-y1) > moveTolerance) {
-      dx = x - x1;
-      dy = y - y1;
-      if (abs(x-x1) < moveTolerance || abs(y-y1) < moveTolerance) break;
+    int moveTolerance = 100;
+    int dx = x1 - x;
+    int dy = y1 - y;
+    while (true) {
+        if (abs(dx) < moveTolerance && abs(dy) < moveTolerance) break;
+      dx = x1 - x;
+      dy = y1 - y;
+      double distance = sqrt(dx*dx + dy*dy);
+      //if (abs(x-x1) < moveTolerance || abs(y-y1) < moveTolerance) break;
       float angle_ = Inertial.get_heading();
       if (x-x1 == 0) angle = 90;
       angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
-      if (dx < 0 && dy > 0) angle +=180;
-      if (dx < 0 && dy < 0) angle +=180;
+      //if (backwards) angle = 360 - angle + 180;
+    //    if (dx < 0 &&  dy > 0) angle = - angle; //if 2nd quadrant
+    //    if (dx < 0 && dy < 0) angle = - angle; // if 3rd quadrant
       angle += 360;
-      if (backwards) angle += 180; // detect if robot moves backwards
+      //if (backwards) angle += 180; // detect if robot moves backwards
       angle %=360;
       pros::lcd::set_text(1, "Target: " + to_string(angle));
       pros::lcd::set_text(2, "Current: " + to_string(angle_));
@@ -848,7 +670,7 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
       int actualTurn = 0;
         bool specialDown = false;
         bool specialUp = false;
-        int angleTolerance = 3;
+        int angleTolerance = 1;
         double upperAngleBound = angle + angleTolerance;
         double lowerAngleBound = angle - angleTolerance;
         if (lowerAngleBound < 0) {
@@ -887,7 +709,7 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
                       if (turn_difference < close_turn) {
 
                           actualTurn =
-                              (turn_speed * ((turn_difference / (close_turn))*1.6 + KPBASETURN));
+                              (turn_speed * ((turn_difference / (close_turn))*2.5 + KPBASETURN));
                       } else {
                           actualTurn = turn_speed;
                       }
@@ -900,18 +722,23 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
       //int angleDifference = (Inertial.get_heading() - angle) * 0.2;
 
 
-      int move = fowardSpeed;
+      int move = backwards ? -fowardSpeed : fowardSpeed;
+    //   if (PID && distance < 500) {
+    //       move = (distance/500)*2+10;
+    //   }
+
       // int closeTarget = 300;
       // if ((abs(x - x1) < closeTarget || abs(y-y1) < closeTarget) && fowardPID == true) {
       //   int closer = abs(x - x1) < abs(y-y1) ? abs(x - x1) : abs(y-y1);
       //   move = fowardSpeed * (closer / closeTarget);
       // }
-      int difference = 2*actualTurn;
+      int difference = backwards ? 2*actualTurn : 2*actualTurn;
+
       Track();
       // FrontLeftWheel.move(- actualTurn - move);
       // MiddleLeftWheel.move(- actualTurn - move);
       // BackLeftWheel.move(actualTurn + move);
-      // FrontRightWheel.move(- actualTurn + move);
+      // FrontRightWheel.move(  - actualTurn + move);
       // MiddleRightWheel.move(- actualTurn + move);
       // BackRightWheel.move(actualTurn - move);
       FrontLeftWheel.move(-move-difference);
@@ -923,6 +750,52 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
 
      }
      stopHold();
+}
+
+void movespeed(int i, int angle, int speed) {
+    // i = motor speed
+    int target = angle;
+    // FrontRightWheel.tare_position();
+    // FrontLeftWheel.tare_position();
+    // BackRightWheel.tare_position();
+    // BackLeftWheel.tare_position();
+    int initialPos = FrontRightWheel.get_position();
+    
+    if (i > 0) {
+        while (FrontRightWheel.get_position()-initialPos < i) {
+            int difference = (Inertial.get_heading() - target) * 0.3;
+
+            FrontLeftWheel.move(-127 - difference + speed);
+            MiddleLeftWheel.move(-127 - difference + speed);
+            BackLeftWheel.move(+127 + difference - speed);
+            FrontRightWheel.move(+127 - difference - speed);
+            MiddleRightWheel.move(+127 - difference - speed);
+            BackRightWheel.move(-127 + difference + speed);
+
+            pros::lcd::set_text(4, std::to_string(difference));
+        }
+    }
+    if (i < 0) {
+        while (FrontRightWheel.get_position()-initialPos > i) {
+            int difference = (Inertial.get_heading() - target) * 0.3;
+
+            FrontLeftWheel.move(+127 + difference - speed);
+            MiddleLeftWheel.move(+127 + difference - speed);
+            BackLeftWheel.move(-127 - difference + speed);
+
+            FrontRightWheel.move(-127 + difference + speed);
+            MiddleRightWheel.move(-127 + difference + speed);
+            BackRightWheel.move(+127 - difference - speed);
+
+            pros::lcd::set_text(4, std::to_string(difference));
+        }
+    }
+    FrontRightWheel.move(0);
+    FrontLeftWheel.move(0);
+    MiddleRightWheel.move(0);
+    MiddleLeftWheel.move(0);
+    BackRightWheel.move(0);
+    BackLeftWheel.move(0);
 }
 
 
@@ -1082,7 +955,7 @@ void autonomous() {
 
         FrontPiston.set_value(!false);
 
-        movespeed(-150, 80);
+        move(-150);
         TopLift.move_absolute(-2500, 60);
         move(-500, 301);
         // turn(1,3,127);
@@ -1162,7 +1035,7 @@ void autonomous() {
       FrontPiston.set_value(!false);
       Setup();
       stopHold();
-      moveCoords(2300, 460, 127, false);
+      moveCoords(2300, 460, 127, false, true);
 
       FrontPiston.set_value(!true);
       move(-1300, 10);
@@ -1177,27 +1050,48 @@ void autonomous() {
       stopHold();
     }
     //right neutral rush
-    if (auton == 5) {
-      FrontPiston.set_value(!false);
-      Setup();
-      stopHold();
-      moveCoords(2300, 460, 127, false);
 
-      FrontPiston.set_value(!true);
-      move(-1300, 10);
-      FrontPiston.set_value(!false);
-      rDelay(500);
-      move(-800,10);
-      turn(295, 3, 127);
-      move(-550, 285);
-      pros::delay(500);
-      BackPiston.set_value(true);
-      //moveCoords(1000, 300, true, 90);
-      stopHold();
+    if (auton == 6) {
+        
+        Setup();
+        stopHold();
+        FrontPiston.set_value(!false);
+        moveCoords(2350, 0, 127, false, true);
+        FrontPiston.set_value(!true);
+        
+        move(-1200, 0);
+        TopLift.move_absolute(-100, 127);
+
+        //FrontPiston.set_value(!false);
+        move(-200,0);
+        turn(270,3,100,3);
+        pros::delay(500);
+        move(-1200, 270);
+        //moveCoords(300,700, 100, false);
+        BackPiston.set_value(true);
+        pros::delay(400);
+        move (200, 245);
+        
+        turn(357, 3, 127, 3);
+        TopLift.move_absolute(-1000, 127);
+        RingIntake.move(127);
+        pros::delay(500);
+        movespeed(2500, 0, 90);
+        pros::delay(500);
+        movespeed(-3000,0, 40);
+        //movespeed(+800, 90);
+        //movespeed(-800, 90);
+        // moveCoords(x+300, y, 60, true);
+        // moveCoords(x-900, y, 60, true);
+        // moveCoords(x+900, y, 60, true);
+
+    } 
+    if (auton == 7) {
+        turnToGoal(2, 3, 127);
     }
 
     // test
-    else if (auton == 6) {
+    else {
 
         pros::lcd::set_text(3, "running...");
         Setup();

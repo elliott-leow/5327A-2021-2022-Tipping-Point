@@ -47,11 +47,13 @@ pros::Motor BackRightWheel(7, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENC
 pros::Motor BackLeftWheel(15, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
 
 pros::Motor RingIntake(5, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
-pros::Motor TopLift(9, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor TopLift(9, pros::E_MOTOR_GEARSET_18, true, pros::E_MOTOR_ENCODER_COUNTS);
 
 //pros::ADIDigitalOut FrontPiston(1);s
 pros::ADIDigitalOut FrontPiston(4);
 pros::ADIDigitalOut BackPiston(2);
+
+pros::Vision Camera(19);
 
 pros::Controller CONTROLLER(pros::E_CONTROLLER_MASTER);
 
