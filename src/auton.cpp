@@ -504,11 +504,12 @@ int completeGoal(int color) {
     return object - center;
     
 }
-void turnToGoal(int color, int tolerance, int speed) {
+void turnToGoal(int color, int tolerance, int speed, int kP) {
     int error = completeGoal(color);
     while (true) {
-        error = completeGoal(color);
-        int actual_turn = error * 0.4; 
+        if (abs(error) < 3) break;
+        error = completeGoal(color) * kP;
+        int actual_turn = error; 
         FrontLeftWheel.move(-actual_turn);
         MiddleLeftWheel.move(-actual_turn);
         BackLeftWheel.move(actual_turn);
@@ -639,10 +640,13 @@ void rDelay(int ms) {
     }
 }
 
-void moveCoords(int x1, int y1, int fowardSpeed, bool backwards, bool PID) {
+void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
     int angle = 0;
     if (x1-x == 0) angle = 0;
     else angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
+    //1,10
+    //
+
     //if (!simul) turnPID(angle, 3);
     int moveTolerance = 100;
     int dx = x1 - x;
@@ -657,8 +661,8 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards, bool PID) {
       if (x-x1 == 0) angle = 90;
       angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
       //if (backwards) angle = 360 - angle + 180;
-    //    if (dx < 0 &&  dy > 0) angle = - angle; //if 2nd quadrant
-    //    if (dx < 0 && dy < 0) angle = - angle; // if 3rd quadrant
+         if (dx < 0 &&  dy > 0) angle = angle += 180; //if 2nd quadrant
+         if (dx < 0 && dy < 0) angle = angle += 180; // if 3rd quadrant
       angle += 360;
       //if (backwards) angle += 180; // detect if robot moves backwards
       angle %=360;
@@ -735,12 +739,6 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards, bool PID) {
       int difference = backwards ? 2*actualTurn : 2*actualTurn;
 
       Track();
-      // FrontLeftWheel.move(- actualTurn - move);
-      // MiddleLeftWheel.move(- actualTurn - move);
-      // BackLeftWheel.move(actualTurn + move);
-      // FrontRightWheel.move(  - actualTurn + move);
-      // MiddleRightWheel.move(- actualTurn + move);
-      // BackRightWheel.move(actualTurn - move);
       FrontLeftWheel.move(-move-difference);
       MiddleLeftWheel.move(-move-difference);
       BackLeftWheel.move(move+difference);
@@ -1035,7 +1033,7 @@ void autonomous() {
       FrontPiston.set_value(!false);
       Setup();
       stopHold();
-      moveCoords(2300, 460, 127, false, true);
+      moveCoords(2300, 460, 127, false);
 
       FrontPiston.set_value(!true);
       move(-1300, 10);
@@ -1056,7 +1054,7 @@ void autonomous() {
         Setup();
         stopHold();
         FrontPiston.set_value(!false);
-        moveCoords(2350, 0, 127, false, true);
+        moveCoords(2350, 0, 127, false);
         FrontPiston.set_value(!true);
         
         move(-1200, 0);
@@ -1087,7 +1085,7 @@ void autonomous() {
 
     } 
     if (auton == 7) {
-        turnToGoal(2, 3, 127);
+        turnToGoal(2, 3, 127, 1);
     }
 
     // test

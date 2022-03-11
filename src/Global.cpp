@@ -53,7 +53,7 @@ pros::Motor TopLift(9, pros::E_MOTOR_GEARSET_18, true, pros::E_MOTOR_ENCODER_COU
 pros::ADIDigitalOut FrontPiston(4);
 pros::ADIDigitalOut BackPiston(2);
 
-pros::Vision Camera(19);
+pros::Vision Camera(21);
 
 pros::Controller CONTROLLER(pros::E_CONTROLLER_MASTER);
 
