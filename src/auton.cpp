@@ -6,7 +6,7 @@
 
 
 #define close_turn 90
-#define auton 7
+#define auton 4
 #define M_PI 3.14159265
 using namespace std;
 using namespace pros;
@@ -24,7 +24,7 @@ double BL, BR, ML, MR, FL, FR;
 // 3 == do nothing
 // 4 == prog skills
 // 5 = left side neutral rush w/ pos tracking
-// 6 == right side neutral rush 
+// 6 == right side neutral rush
 // double KPBASETURN = 0.2;
 double KPBASETURN = 0.2;
 //LV_IMG_DECLARE(gojo);
@@ -205,6 +205,8 @@ void move(int i, int angle, double speed) {
     FrontLeftWheel.move(0);
     BackRightWheel.move(0);
     BackLeftWheel.move(0);
+    MiddleRightWheel.move(0);
+    MiddleLeftWheel.move(0);
 }
 
 void move(int i, int angle) {
@@ -288,7 +290,7 @@ void move(int i, int angle) {
         FrontRightWheel.move(+move - actual_turn);
         MiddleRightWheel.move(+move - actual_turn);
         BackRightWheel.move(-move + actual_turn);
-
+        pros::delay(10);
     }
 
     // Moves the wheels at a certain "move" speed
@@ -296,6 +298,8 @@ void move(int i, int angle) {
     FrontLeftWheel.move(0);
     BackRightWheel.move(0);
     BackLeftWheel.move(0);
+    MiddleRightWheel.move(0);
+    MiddleLeftWheel.move(0);
 }
 
 void stopHold() {
@@ -502,14 +506,14 @@ int completeGoal(int color) {
     int object = rtn.x_middle_coord;
     pros::lcd::set_text(2, to_string(center - object));
     return object - center;
-    
+
 }
 void turnToGoal(int color, int tolerance, int speed, int kP) {
     int error = completeGoal(color);
     while (true) {
         if (abs(error) < 3) break;
         error = completeGoal(color) * kP;
-        int actual_turn = error; 
+        int actual_turn = error;
         FrontLeftWheel.move(-actual_turn);
         MiddleLeftWheel.move(-actual_turn);
         BackLeftWheel.move(actual_turn);
@@ -758,7 +762,7 @@ void movespeed(int i, int angle, int speed) {
     // BackRightWheel.tare_position();
     // BackLeftWheel.tare_position();
     int initialPos = FrontRightWheel.get_position();
-    
+
     if (i > 0) {
         while (FrontRightWheel.get_position()-initialPos < i) {
             int difference = (Inertial.get_heading() - target) * 0.3;
@@ -906,27 +910,67 @@ void autonomous() {
         // go  for small neutral left
         TopLift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         BackPiston.set_value(true);
-        FrontPiston.set_value(!false);
-
+        FrontPiston.set_value(true);
 
         // elevate small neutral left
         pros::delay(300);
         move(500, 90);
         RingIntake.move(127);
-        move(1800, 119);
-        FrontPiston.set_value(!true);
+        move(1800, 113);
+        FrontPiston.set_value(false);
+        TopLift.move_absolute(-3000,127);
+        pros::delay(600);
+        move(2850, 120);
 
-        TopLift.move_absolute(-4100, 127);
-        pros::delay(700);
-        move(2800, 113);
 
-        TopLift.move_absolute(-2500, 128);
-        pros::delay(1000);
 
-        FrontPiston.set_value(!false);
+//drops small neutral
+        TopLift.move_absolute(2500, 127);
+        pros::delay(1300);
+        FrontPiston.set_value(true);
 
         TopLift.move_absolute(-3500, 127);
         pros::delay(300);
+
+
+        movespeed(-950, 120,90);
+        TopLift.move_absolute(3000,127);
+        BackPiston.set_value(false);
+        pros::delay(800);
+        movespeed(200,120,90);
+        turn(315,3,60,3);
+        pros::delay(300);
+        move(900,300);
+      
+        //clamps the alliance mogo
+        FrontPiston.set_value(false);
+        pros::delay(100);
+        TopLift.move_absolute(-2400,127);
+        turn(110,3,127);
+        pros::delay(600);
+        move(1900,115);
+        TopLift.move_absolute(1000,127);
+        pros::delay(1000);
+        TopLift.move_absolute(-2000,127);
+        FrontPiston.set_value(true);
+      
+        move(-1300,115);
+        TopLift.move_absolute(2000,127);
+        pros::delay(600);
+        turn(225,3,127);
+        
+        move(2000,225);
+        
+        //clamps tall neutral mogo
+        FrontPiston.set_value(false);
+        move(-3900,225);
+        move(-500,170);
+        TopLift.move_absolute(-2000,127);
+        pros::delay(1500);
+        move(800,180);
+        pros::delay(500);
+        FrontPiston.set_value(true);
+        pros::delay(30000);
 
         // align for large middge neutral
         move(-600, 117);
@@ -1050,13 +1094,13 @@ void autonomous() {
     //right neutral rush
 
     if (auton == 6) {
-        
+
         Setup();
         stopHold();
         FrontPiston.set_value(!false);
         moveCoords(2350, 0, 127, false);
         FrontPiston.set_value(!true);
-        
+
         move(-1200, 0);
         TopLift.move_absolute(-100, 127);
 
@@ -1069,7 +1113,7 @@ void autonomous() {
         BackPiston.set_value(true);
         pros::delay(400);
         move (200, 245);
-        
+
         turn(357, 3, 127, 3);
         TopLift.move_absolute(-1000, 127);
         RingIntake.move(127);
@@ -1083,9 +1127,12 @@ void autonomous() {
         // moveCoords(x-900, y, 60, true);
         // moveCoords(x+900, y, 60, true);
 
-    } 
+    }
     if (auton == 7) {
-        turnToGoal(2, 3, 127, 1);
+      //  turnToGoal(2, 3, 127, 1);
+      TopLift.move_absolute(-2400, 127);
+
+
     }
 
     // test
