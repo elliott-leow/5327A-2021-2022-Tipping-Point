@@ -6,7 +6,7 @@
 
 
 #define close_turn 90
-#define auton 4
+#define auton 7
 #define M_PI 3.14159265
 using namespace std;
 using namespace pros;
@@ -386,6 +386,7 @@ void turn(int angle, int tolerance, int turn_speed, int PIDRATIO) {
             (angle < angle_ && angle_ - angle < 180))
             actual_turn = -actual_turn;
 
+            Track();
         FrontLeftWheel.move(-actual_turn);
         MiddleLeftWheel.move(-actual_turn);
         BackLeftWheel.move(actual_turn);
@@ -467,7 +468,8 @@ void turn(int angle, int tolerance, int turn_speed) {
             (angle > angle_ - 180 && angle_ > 180 && angle < 180) ||
             (angle < angle_ && angle_ - angle < 180))
             actual_turn = -actual_turn;
-
+            
+            Track();
         FrontLeftWheel.move(-actual_turn);
         MiddleLeftWheel.move(-actual_turn);
         BackLeftWheel.move(actual_turn);
@@ -514,6 +516,7 @@ void turnToGoal(int color, int tolerance, int speed, int kP) {
         if (abs(error) < 3) break;
         error = completeGoal(color) * kP;
         int actual_turn = error;
+        Track();
         FrontLeftWheel.move(-actual_turn);
         MiddleLeftWheel.move(-actual_turn);
         BackLeftWheel.move(actual_turn);
@@ -665,10 +668,14 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
       if (x-x1 == 0) angle = 90;
       angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
       //if (backwards) angle = 360 - angle + 180;
-         if (dx < 0 &&  dy > 0) angle = angle += 180; //if 2nd quadrant
-         if (dx < 0 && dy < 0) angle = angle += 180; // if 3rd quadrant
-      angle += 360;
+      
+      angle +=360;
+      angle %=360;
+         if (dx < 0 &&  dy > 0) angle = 360-angle; //if 2nd quadrant
+         if (dx < 0 && dy < 0)  angle = 360 - angle; // if 3rd quadrant
+      //angle += 360;
       //if (backwards) angle += 180; // detect if robot moves backwards
+      angle +=360;
       angle %=360;
       pros::lcd::set_text(1, "Target: " + to_string(angle));
       pros::lcd::set_text(2, "Current: " + to_string(angle_));
@@ -765,22 +772,22 @@ void movespeed(int i, int angle, int speed) {
 
     if (i > 0) {
         while (FrontRightWheel.get_position()-initialPos < i) {
-            int difference = (Inertial.get_heading() - target) * 0.3;
-
+            //int difference = -(Inertial.get_heading() - target) *1.5;
+            int difference = 0;
             FrontLeftWheel.move(-127 - difference + speed);
             MiddleLeftWheel.move(-127 - difference + speed);
             BackLeftWheel.move(+127 + difference - speed);
             FrontRightWheel.move(+127 - difference - speed);
             MiddleRightWheel.move(+127 - difference - speed);
             BackRightWheel.move(-127 + difference + speed);
-
+            Track();
             pros::lcd::set_text(4, std::to_string(difference));
         }
     }
     if (i < 0) {
         while (FrontRightWheel.get_position()-initialPos > i) {
-            int difference = (Inertial.get_heading() - target) * 0.3;
-
+            //int difference = -(Inertial.get_heading() - target) * 1.5;
+            int difference = 0;
             FrontLeftWheel.move(+127 + difference - speed);
             MiddleLeftWheel.move(+127 + difference - speed);
             BackLeftWheel.move(-127 - difference + speed);
@@ -788,7 +795,7 @@ void movespeed(int i, int angle, int speed) {
             FrontRightWheel.move(-127 + difference + speed);
             MiddleRightWheel.move(-127 + difference + speed);
             BackRightWheel.move(+127 - difference - speed);
-
+            Track();
             pros::lcd::set_text(4, std::to_string(difference));
         }
     }
@@ -925,7 +932,7 @@ void autonomous() {
 
 
 //drops small neutral
-        TopLift.move_absolute(2500, 127);
+        TopLift.move_absolute(10, 127);
         pros::delay(1300);
         FrontPiston.set_value(true);
 
@@ -934,7 +941,7 @@ void autonomous() {
 
 
         movespeed(-950, 120,90);
-        TopLift.move_absolute(3000,127);
+        TopLift.move_absolute(10,127);
         BackPiston.set_value(false);
         pros::delay(800);
         movespeed(200,120,90);
@@ -949,28 +956,78 @@ void autonomous() {
         turn(110,3,127);
         pros::delay(600);
         move(1900,115);
-        TopLift.move_absolute(1000,127);
+        TopLift.move_absolute(10,127);
         pros::delay(1000);
         TopLift.move_absolute(-2000,127);
         FrontPiston.set_value(true);
       
         move(-1300,115);
-        TopLift.move_absolute(2000,127);
+        TopLift.move_absolute(10,127);
         pros::delay(600);
-        turn(225,3,127);
+        turn(218,3,127);
         
         move(2000,225);
         
         //clamps tall neutral mogo
         FrontPiston.set_value(false);
-        move(-3900,225);
-        move(-500,170);
-        TopLift.move_absolute(-2000,127);
-        pros::delay(1500);
-        move(800,180);
-        pros::delay(500);
+        move(-3680,225);
+        move(-800,180);
+        turn(174, 3,127,3);
+        TopLift.move_absolute(-1700,127);
+        pros::delay(1800);
+        //pushing other mogos on platform
+        movespeed(1550,190, 45);
+        pros::delay(300);
         FrontPiston.set_value(true);
+        pros::delay(300);
+        movespeed(-650, 170, 40);
+        TopLift.move_absolute(10,127);
+        pros::delay(2000);
+        turn(295, 3,127);
+        move(1000, 295);
+        FrontPiston.set_value(false);
+        move(-300,225);
+        TopLift.move_absolute(-10,127);
+        pros::delay(200);
+        turn(225,3,127,3);
+        
+        move(6000,225);
+        
+        //elevate opposite alliance
+        turn(300,3,127,3);
+        TopLift.move_absolute(-2600,127);
+        pros::delay(2000);
+
+
+        move(1400,300);
+        
+        //TopLift.move_absolute(10,127);
+        FrontPiston.set_value(true);
+        
+        //elevate right neutral
+        move(-1500,295);
+        TopLift.move_absolute(10,127);
+        pros::delay(1500);
+        turn(130,3,127);
+        move(1500, 130);
+        FrontPiston.set_value(false);
+        turn(295,3,127,3);
+        TopLift.move_absolute(-2300,127);
+        pros::delay(2000);
+        
+
+        move(2900,295);
+        FrontPiston.set_value(true);
+        move(-1000,295);
+        
+        
+        //movespeed(-200,120,90);
+        
+        //moveCoords(800,-8000,127,false);
+        
         pros::delay(30000);
+        
+        //END OF SKILLS
 
         // align for large middge neutral
         move(-600, 117);
@@ -1026,6 +1083,8 @@ void autonomous() {
         //turn(52, 3, 127);
         FrontPiston.set_value(!false);
 
+
+        
         TopLift.move_absolute(-3500, 127);
         // pros::delay(300);
 
@@ -1129,8 +1188,8 @@ void autonomous() {
 
     }
     if (auton == 7) {
-      //  turnToGoal(2, 3, 127, 1);
-      TopLift.move_absolute(-2400, 127);
+      turnToGoal(2, 3, 127, 1);
+      //TopLift.move_absolute(-2400, 127);
 
 
     }
