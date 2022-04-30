@@ -19,8 +19,33 @@ bool buttonL1True = false;
 bool buttonATrue = false;
 
 bool yoru = false;
+bool clampState = false;
+
+void backClamp() {
+  while (true) {
+    if (CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && !buttonL2Prev) {
+      if (!isBackClamp) {
+        BackPiston.set_value(isBackClamp);
+        pros::delay(200);
+        Tilter.set_value(isBackClamp);
+        isBackClamp = !isBackClamp;
+      } else {
+
+        Tilter.set_value(isBackClamp);
+        pros::delay(300);
+        BackPiston.set_value(isBackClamp);
+        isBackClamp = !isBackClamp;
+
+      }
+    }
+    buttonL2Prev = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+  }
+}
 
 void opcontrol() {
+    new pros::Task(backClamp);
+
+
 
     TopLift.tare_position();
 
@@ -49,7 +74,7 @@ void opcontrol() {
         bool ringIntakeUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_R1)
           || CONTROLLER2.get_digital(pros::E_CONTROLLER_DIGITAL_R1);;
         bool ringIntakeDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
-          || CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+          || CONTROLLER2.get_digital(pros::E_CONTROLLER_DIGITAL_L1); //gives victor reverse
         bool liftUp = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
         bool liftDown = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
 
@@ -103,8 +128,7 @@ void opcontrol() {
         }
 
         if (pistonBack && !buttonL2Prev) {
-            BackPiston.set_value(!isBackClamp);
-            isBackClamp = !isBackClamp;
+
         }
 
         if (ringIntakeUp && !buttonR1Prev) {
@@ -145,7 +169,7 @@ void opcontrol() {
         BackRightWheel.move(-STRAIGHT + TURN);
 
         buttonR2Prev = pistonFront;
-        buttonL2Prev = pistonBack;
+
         buttonR1Prev = ringIntakeUp;
         buttonL1Prev = ringIntakeDown;
     }

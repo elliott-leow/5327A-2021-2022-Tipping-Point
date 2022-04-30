@@ -39,19 +39,20 @@
 // pros::Controller CONTROLLER(pros::E_CONTROLLER_MASTER);
 //
 // pros::Imu Inertial(15);
-pros::Motor FrontRightWheel(8, pros::E_MOTOR_GEARSET_06 , false,pros::E_MOTOR_ENCODER_COUNTS);
-pros::Motor FrontLeftWheel(18, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
-pros::Motor MiddleRightWheel(6, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS); //
-pros::Motor MiddleLeftWheel(17, pros::E_MOTOR_GEARSET_36, false, pros::E_MOTOR_ENCODER_COUNTS);
-pros::Motor BackRightWheel(7, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
-pros::Motor BackLeftWheel(15, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor FrontRightWheel(5, pros::E_MOTOR_GEARSET_06 , false,pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor FrontLeftWheel(6, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor MiddleRightWheel(3, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS); //
+pros::Motor MiddleLeftWheel(10, pros::E_MOTOR_GEARSET_36, false, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor BackRightWheel(2, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor BackLeftWheel(8, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
 
-pros::Motor RingIntake(5, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
-pros::Motor TopLift(9, pros::E_MOTOR_GEARSET_18, true, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor RingIntake(9, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
+pros::Motor TopLift(1, pros::E_MOTOR_GEARSET_18, true, pros::E_MOTOR_ENCODER_COUNTS);
 
 //pros::ADIDigitalOut FrontPiston(1);s
-pros::ADIDigitalOut FrontPiston(4);
-pros::ADIDigitalOut BackPiston(2);
+pros::ADIDigitalOut FrontPiston(6);
+pros::ADIDigitalOut BackPiston(1);
+pros::ADIDigitalOut Tilter(3);
 
 pros::Vision Camera(21);
 
@@ -59,4 +60,4 @@ pros::Controller CONTROLLER(pros::E_CONTROLLER_MASTER);
 
 pros::Controller CONTROLLER2(pros::E_CONTROLLER_PARTNER);
 
-pros::Imu Inertial(16);
+pros::Imu Inertial(7);

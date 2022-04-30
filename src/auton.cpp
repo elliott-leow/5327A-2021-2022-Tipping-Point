@@ -6,10 +6,10 @@
 
 
 #define close_turn 90
-#define auton 7
+#define auton 3
 #define M_PI 3.14159265
 using namespace std;
-using namespace pros;
+//using namespace pros;
 
 // GLOBAL POSITION VARIABLES
 double x = 0;
@@ -40,6 +40,7 @@ void initialize() {
     pros::delay(3000);
     //pros::lcd::set_text(1, "Init");
     pros::lcd::set_text(3, to_string(auton));
+
 }
 
 /*
@@ -113,20 +114,20 @@ void competition_initialize() { initialize(); }
 
 double saveHeading = 0;
 
-void move(int i, int angle, double speed) {
+void move(int i, int angle, int speed) {
     // i = motor speed, angle = angle the robot should turn towards while moving
 
-    // FrontRightWheel.tare_position();
-    // FrontLeftWheel.tare_position();
-    // BackRightWheel.tare_position();
-    // BackLeftWheel.tare_position();
-    int initialPos = FrontRightWheel.get_position();
+    FrontRightWheel.tare_position();
+    FrontLeftWheel.tare_position();
+    BackRightWheel.tare_position();
+    BackLeftWheel.tare_position();
     int target = Inertial.get_heading();
 
-    while (std::abs(FrontRightWheel.get_position()-initialPos) < std::abs(i)) {
+    while (std::abs(FrontRightWheel.get_position()) < std::abs(i)) {
 
         int actual_turn = 0;
-        int move = i < 0 ? -90 : 90;
+        //   int move = i < 0 ? -90 : 90;
+        int move = i < 0 ? -127+speed : 127-speed;
         int tolerance = 3;
         int upperAngleBound = angle + tolerance;
         int lowerAngleBound = angle - tolerance;
@@ -168,7 +169,7 @@ void move(int i, int angle, double speed) {
                 turn_difference = 360 - turn_difference;
 
             // Slows down if close to goal heading and stays fast if it is away
-            int turn_speed = 90;
+            int turn_speed = 150;
             if (turn_difference < close_turn) {
                 actual_turn = (turn_speed *
                                ((turn_difference / (close_turn)) + KPBASETURN));
@@ -189,15 +190,13 @@ void move(int i, int angle, double speed) {
             c = -c;
         }
         Track();
-        move = move > 127 ? 127 : move;
-        move = move < 127 ? -127 : move;
         FrontLeftWheel.move(-move - actual_turn);
         MiddleLeftWheel.move(-move - actual_turn);
         BackLeftWheel.move(+move + actual_turn);
         FrontRightWheel.move(+move - actual_turn);
         MiddleRightWheel.move(+move - actual_turn);
         BackRightWheel.move(-move + actual_turn);
-
+        pros::delay(10);
     }
 
     // Moves the wheels at a certain "move" speed
@@ -209,7 +208,7 @@ void move(int i, int angle, double speed) {
     MiddleLeftWheel.move(0);
 }
 
-void move(int i, int angle) {
+void movePID(int i, int angle, int min) {
     // i = motor speed, angle = angle the robot should turn towards while moving
 
     FrontRightWheel.tare_position();
@@ -221,7 +220,8 @@ void move(int i, int angle) {
     while (std::abs(FrontRightWheel.get_position()) < std::abs(i)) {
 
         int actual_turn = 0;
-        int move = i < 0 ? -90 : 90;
+        //   int move = i < 0 ? -90 : 90;
+        int move = i < 0 ? -127 : 127;
         int tolerance = 3;
         int upperAngleBound = angle + tolerance;
         int lowerAngleBound = angle - tolerance;
@@ -263,7 +263,105 @@ void move(int i, int angle) {
                 turn_difference = 360 - turn_difference;
 
             // Slows down if close to goal heading and stays fast if it is away
-            int turn_speed = 90;
+            int turn_speed = 150;
+            if (turn_difference < close_turn) {
+                actual_turn = (turn_speed *
+                               ((turn_difference / (close_turn)) + KPBASETURN));
+            } else {
+                actual_turn = turn_speed;
+            }
+
+            /*Special conditions if angle bounds are less than 0 or greater than
+               360 Neccesary for proper turning and calculation*/
+            if ((angle > angle_ + 180) ||
+                (angle > angle_ - 180 && angle_ > 180 && angle < 180) ||
+                (angle < angle_ && angle_ - angle < 180))
+                actual_turn = -actual_turn;
+        }
+        int c = 5;
+        if (i < 0) {
+
+            c = -c;
+        }
+        Track();
+        if (std::abs(FrontRightWheel.get_position()) - std::abs(i) < min) {
+          move = 50*(std::abs(FrontRightWheel.get_position()) - std::abs(i));
+        }
+        FrontLeftWheel.move(-move - actual_turn);
+        MiddleLeftWheel.move(-move - actual_turn);
+        BackLeftWheel.move(+move + actual_turn);
+        FrontRightWheel.move(+move - actual_turn);
+        MiddleRightWheel.move(+move - actual_turn);
+        BackRightWheel.move(-move + actual_turn);
+        pros::delay(10);
+    }
+
+    // Moves the wheels at a certain "move" speed
+    FrontRightWheel.move(0);
+    FrontLeftWheel.move(0);
+    BackRightWheel.move(0);
+    BackLeftWheel.move(0);
+    MiddleRightWheel.move(0);
+    MiddleLeftWheel.move(0);
+}
+
+
+void move(int i, int angle) {
+    // i = motor speed, angle = angle the robot should turn towards while moving
+
+    FrontRightWheel.tare_position();
+    FrontLeftWheel.tare_position();
+    BackRightWheel.tare_position();
+    BackLeftWheel.tare_position();
+    int target = Inertial.get_heading();
+
+    while (std::abs(FrontRightWheel.get_position()) < std::abs(i)) {
+
+        int actual_turn = 0;
+        //   int move = i < 0 ? -90 : 90;
+        int move = i < 0 ? -127 : 127;
+        int tolerance = 3;
+        int upperAngleBound = angle + tolerance;
+        int lowerAngleBound = angle - tolerance;
+
+        int angle_ = (Inertial.get_heading());
+        bool specialDown = false;
+        bool specialUp = false;
+        if (lowerAngleBound < 0) {
+            lowerAngleBound = lowerAngleBound + 360;
+            specialDown = true;
+        }
+        if (upperAngleBound > 360) {
+            upperAngleBound = upperAngleBound - 360;
+            specialUp = true;
+        }
+        // if the robot is not at the heading
+        if ((specialDown == true &&
+             ((angle_ < lowerAngleBound && angle_ > angle + 180) ||
+              (angle_ > upperAngleBound && angle_ < angle + 180))) ||
+            (specialUp == true &&
+             ((angle_ > upperAngleBound && angle_ < angle - 180) ||
+              (angle_ < lowerAngleBound && angle_ > angle - 180))) ||
+            ((specialUp == false && specialDown == false) &&
+             (angle_ > upperAngleBound || angle_ < lowerAngleBound))) {
+            angle_ = (Inertial.get_heading());
+
+            float turn_difference = angle_ - angle;
+
+            if (turn_difference > 180)
+                turn_difference = 360 - turn_difference;
+            if (turn_difference < -180)
+                turn_difference = 360 + turn_difference;
+            if (turn_difference < 0 && turn_difference > -180)
+                turn_difference = -turn_difference;
+
+            // Spins in the directions which will allow bot to complete turn
+            // fastest
+            if (turn_difference > 180)
+                turn_difference = 360 - turn_difference;
+
+            // Slows down if close to goal heading and stays fast if it is away
+            int turn_speed = 150;
             if (turn_difference < close_turn) {
                 actual_turn = (turn_speed *
                                ((turn_difference / (close_turn)) + KPBASETURN));
@@ -468,7 +566,7 @@ void turn(int angle, int tolerance, int turn_speed) {
             (angle > angle_ - 180 && angle_ > 180 && angle < 180) ||
             (angle < angle_ && angle_ - angle < 180))
             actual_turn = -actual_turn;
-            
+
             Track();
         FrontLeftWheel.move(-actual_turn);
         MiddleLeftWheel.move(-actual_turn);
@@ -499,7 +597,7 @@ void turn(int angle, int tolerance, int turn_speed) {
 
 int completeGoal(int color) {
     pros::lcd::set_text(1, "complete goal");
-    vision_object_s_t rtn = Camera.get_by_sig(0, 2);
+    pros::vision_object_s_t rtn = Camera.get_by_sig(0, 2);
     //pros::lcd::set_text(2, "");
     int actual_turn = 0;
     int width = 316;
@@ -668,7 +766,7 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
       if (x-x1 == 0) angle = 90;
       angle = atan((y1-y)/(x1-x)) * 180/ M_PI;
       //if (backwards) angle = 360 - angle + 180;
-      
+
       angle +=360;
       angle %=360;
          if (dx < 0 &&  dy > 0) angle = 360-angle; //if 2nd quadrant
@@ -761,9 +859,9 @@ void moveCoords(int x1, int y1, int fowardSpeed, bool backwards) {
      stopHold();
 }
 
-void movespeed(int i, int angle, int speed) {
+void movespeed(int i, int a, int speed, bool e) {
     // i = motor speed
-    int target = angle;
+    int target = a;
     // FrontRightWheel.tare_position();
     // FrontLeftWheel.tare_position();
     // BackRightWheel.tare_position();
@@ -772,8 +870,8 @@ void movespeed(int i, int angle, int speed) {
 
     if (i > 0) {
         while (FrontRightWheel.get_position()-initialPos < i) {
-            //int difference = -(Inertial.get_heading() - target) *1.5;
-            int difference = 0;
+            int difference = (target - Inertial.get_heading()) *0.5;
+            //int difference = 0;
             FrontLeftWheel.move(-127 - difference + speed);
             MiddleLeftWheel.move(-127 - difference + speed);
             BackLeftWheel.move(+127 + difference - speed);
@@ -786,8 +884,8 @@ void movespeed(int i, int angle, int speed) {
     }
     if (i < 0) {
         while (FrontRightWheel.get_position()-initialPos > i) {
-            //int difference = -(Inertial.get_heading() - target) * 1.5;
-            int difference = 0;
+            int difference = (target - Inertial.get_heading()) * 0.5;
+            //int difference = 0;
             FrontLeftWheel.move(+127 + difference - speed);
             MiddleLeftWheel.move(+127 + difference - speed);
             BackLeftWheel.move(-127 - difference + speed);
@@ -807,9 +905,87 @@ void movespeed(int i, int angle, int speed) {
     BackLeftWheel.move(0);
 }
 
+void movespeed(int i, int angle, int speed) {
+    // i = motor speed
+    int target = angle;
+    // FrontRightWheel.tare_position();
+    // FrontLeftWheel.tare_position();
+    // BackRightWheel.tare_position();
+    // BackLeftWheel.tare_position();
+    int initialPos = FrontRightWheel.get_position();
 
+    if (i > 0) {
+        while (FrontRightWheel.get_position()-initialPos < i) {
+            //int difference = -(target - Inertial.get_heading()) *1.5;
+            int difference = 0;
+            FrontLeftWheel.move(-127 - difference + speed);
+            MiddleLeftWheel.move(-127 - difference + speed);
+            BackLeftWheel.move(+127 + difference - speed);
+            FrontRightWheel.move(+127 - difference - speed);
+            MiddleRightWheel.move(+127 - difference - speed);
+            BackRightWheel.move(-127 + difference + speed);
+            Track();
+            pros::lcd::set_text(4, std::to_string(difference));
+        }
+    }
+    if (i < 0) {
+        while (FrontRightWheel.get_position()-initialPos > i) {
+            //int difference = -(target - Inertial.get_heading()) * 1.5;
+            int difference = 0;
+            FrontLeftWheel.move(+127 + difference - speed);
+            MiddleLeftWheel.move(+127 + difference - speed);
+            BackLeftWheel.move(-127 - difference + speed);
+
+            FrontRightWheel.move(-127 + difference + speed);
+            MiddleRightWheel.move(-127 + difference + speed);
+            BackRightWheel.move(+127 - difference - speed);
+            Track();
+            pros::lcd::set_text(4, std::to_string(difference));
+        }
+    }
+    FrontRightWheel.move(0);
+    FrontLeftWheel.move(0);
+    MiddleRightWheel.move(0);
+    MiddleLeftWheel.move(0);
+    BackRightWheel.move(0);
+    BackLeftWheel.move(0);
+}
+bool toClamp = false;
+bool val = false;
+
+void backClamp(bool v) {
+  val = v;
+  toClamp = true;
+}
+
+void clamp(void * param) {
+
+  while (true) {
+    if (val && toClamp) {
+      Tilter.set_value(val);
+
+      pros::delay(400);
+      BackPiston.set_value(val);
+      toClamp = false;
+    }
+    else if (toClamp){
+
+
+
+      BackPiston.set_value(val);
+      pros::delay(200);
+      Tilter.set_value(val);
+      toClamp = false;
+
+    }
+  }
+}
 
 void autonomous() {
+
+  pros::task_t  task = pros::c::task_create(clamp, (void*)"PROS", TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Task Name");
+  pros::Task bClamp(task);
+
     TopLift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     stopHold();
     // chang
@@ -851,28 +1027,49 @@ void autonomous() {
         turn(180, 3, 100);
     }
 
+
+    //right side -> small neutal -> alliance goal -> score rings
     if (auton == 1) {
 
         FrontPiston.set_value(!false);
 
-        move(2700, 18);
+        backClamp(true);
+        move(2100,13);
         FrontPiston.set_value(!true);
-
-        // pros::delay(100);
-        move(-900);
-        pros::delay(100);
-        turn(270, 13, 100);
+        move(100,13);
+        pros::delay(50);
+        move(-2200,13);
         pros::delay(500);
-        move(-2300, 270);
-        pros::delay(100);
-        move(300, 270);
-        turn(225, 10, 200);
-        pros::delay(200);
-        move(-400);
-        // move(2050,247);
-        // BackPiston.set_value(true);
-        move(1300, 256);
-        move(2300, 180);
+        turn(312,3,100,2);
+        movespeed(-500,313,60);
+
+        backClamp(false);
+        pros::delay(500);
+        move(950,313);
+        //movespeed(1200, 313,60);
+        pros::delay(500);
+        TopLift.move_absolute(-2000, 127);
+        turn(45,3,100,2);
+        RingIntake.move_voltage(-12000);
+        move(1200,35,50);
+        turn(90,3,100,2);
+
+        move(250,80,70);
+        move(250,100,70);
+        move(250,80,70);
+        move(250,100,70);
+        move(250,80,70);
+        move(250,100,70);
+        move(250,80,70);
+        move(250,100,70);
+        move(250,80,70);
+        move(250,100,70);
+        move(250,80,70);
+        move(250,100,70);
+        move(250,80,70);
+        move(250,100,70);
+        backClamp(true);
+
     }
     if (auton == 2) {
         // Inertial.tare();
@@ -908,7 +1105,33 @@ void autonomous() {
         pros::delay(100);
         move(-2200);
     }
+    //left side -> small neutal -> alliance neutal -> rings
     if (auton == 3) {
+      FrontPiston.set_value(!false);
+      backClamp(true);
+      //Setup();
+      stopHold();
+      //moveCoords(2300, 460, 127, false);
+      move(2100,1);
+      FrontPiston.set_value(!true);
+      move(100,1);
+      move(-1100, 3);
+      turn(260, 3, 127,2);
+      move(-1200, 270,60);
+      pros::delay(500);
+      backClamp(false);
+      pros::delay(500);
+      RingIntake.move(-127);
+      TopLift.move_absolute(-2000, 127);
+      move(100,270);
+
+      turn(1,3,127,2);
+      move(2000,1,85);
+      pros::delay(300);
+      move(-2700,1,10);
+      backClamp(true);
+      //moveCoords(1000, 300, true, 90);
+      stopHold();
     }
 
     // skills
@@ -933,14 +1156,14 @@ void autonomous() {
 
 //drops small neutral
         TopLift.move_absolute(10, 127);
-        pros::delay(1300);
+        pros::delay(1200);
         FrontPiston.set_value(true);
-
+        pros::delay(200);
         TopLift.move_absolute(-3500, 127);
         pros::delay(300);
 
 
-        movespeed(-950, 120,90);
+        movespeed(-950, 117,90);
         TopLift.move_absolute(10,127);
         BackPiston.set_value(false);
         pros::delay(800);
@@ -948,7 +1171,7 @@ void autonomous() {
         turn(315,3,60,3);
         pros::delay(300);
         move(900,300);
-      
+
         //clamps the alliance mogo
         FrontPiston.set_value(false);
         pros::delay(100);
@@ -960,73 +1183,120 @@ void autonomous() {
         pros::delay(1000);
         TopLift.move_absolute(-2000,127);
         FrontPiston.set_value(true);
-      
+        pros::delay(500);
         move(-1300,115);
         TopLift.move_absolute(10,127);
         pros::delay(600);
         turn(218,3,127);
-        
-        move(2000,225);
-        
+
+        move(1700,225);
+
         //clamps tall neutral mogo
         FrontPiston.set_value(false);
-        move(-3680,225);
+        move(-3380,225);
         move(-800,180);
         turn(174, 3,127,3);
         TopLift.move_absolute(-1700,127);
-        pros::delay(1800);
+        pros::delay(1400);
         //pushing other mogos on platform
-        movespeed(1550,190, 45);
+        movespeed(1480,174, 45);
         pros::delay(300);
+
         FrontPiston.set_value(true);
+        TopLift.move_relative(50,127);
+        //release tall  mogo
         pros::delay(300);
-        movespeed(-650, 170, 40);
+        movespeed(-780, 174, 40);
         TopLift.move_absolute(10,127);
-        pros::delay(2000);
+        pros::delay(1000);
         turn(295, 3,127);
         move(1000, 295);
         FrontPiston.set_value(false);
-        move(-300,225);
+        move(-400,295);
         TopLift.move_absolute(-10,127);
         pros::delay(200);
         turn(225,3,127,3);
-        
-        move(6000,225);
-        
+
+        move(5350,225);
+
         //elevate opposite alliance
-        turn(300,3,127,3);
+        turn(292,3,127,3);
         TopLift.move_absolute(-2600,127);
-        pros::delay(2000);
+        pros::delay(1000);
 
 
-        move(1400,300);
-        
+        move(1500,292);
+
         //TopLift.move_absolute(10,127);
         FrontPiston.set_value(true);
-        
+
         //elevate right neutral
+        pros::delay(500);
         move(-1500,295);
         TopLift.move_absolute(10,127);
-        pros::delay(1500);
-        turn(130,3,127);
-        move(1500, 130);
+        pros::delay(1000);
+        turn(120,3,127);
+        move(1500, 126);
         FrontPiston.set_value(false);
         turn(295,3,127,3);
         TopLift.move_absolute(-2300,127);
-        pros::delay(2000);
-        
+        pros::delay(1000);
+
 
         move(2900,295);
         FrontPiston.set_value(true);
-        move(-1000,295);
-        
-        
+        movespeed(-350,295,70);
+        TopLift.move_absolute(10,127);
+        pros::delay(800);
+        // 2nd home alliance alignment
+        turn(180,3,127);
+        pros::delay(100);
+        move(1700,180);
+        FrontPiston.set_value(false);
+        move(-900,180);
+
+        pros::delay(100);
+        turn(90,3,127,3);
+        pros::delay(100);
+        move(3000,90);
+        pros::delay(100);
+        turn(45,3,127,4);
+        //pros::delay(300);
+        TopLift.move_absolute(-2500,127);
+        pros::delay(750);
+        movespeed(1100,50,60);
+
+        //drop home alliance mogo
+        FrontPiston.set_value(true);
+        movespeed(-450,45,80);
+        TopLift.move_absolute(10,127);
+        pros::delay(100);
+        turn(0,3,127,2);
+        movespeed(-1250,0,60);
+
+
+        turn(45,3,127);
+        movespeed(1200,40,60);
+        FrontPiston.set_value(false);
+        move(-4000,90);
+        turn(302,3,127,2);
+        TopLift.move_absolute(-2300,127);
+        pros::delay(2000);
+        move(1500,302);
+        FrontPiston.set_value(true);
+        move(-2000,302);
+
+
+
+
+
+
         //movespeed(-200,120,90);
-        
+
         //moveCoords(800,-8000,127,false);
-        
+
         pros::delay(30000);
-        
+
         //END OF SKILLS
 
         // align for large middge neutral
@@ -1084,7 +1354,7 @@ void autonomous() {
         FrontPiston.set_value(!false);
 
 
-        
+
         TopLift.move_absolute(-3500, 127);
         // pros::delay(300);
 
@@ -1136,8 +1406,8 @@ void autonomous() {
       FrontPiston.set_value(!false);
       Setup();
       stopHold();
-      moveCoords(2300, 460, 127, false);
-
+      //moveCoords(2300, 460, 127, false);
+      move(2600,10);
       FrontPiston.set_value(!true);
       move(-1300, 10);
       FrontPiston.set_value(!false);
@@ -1147,6 +1417,8 @@ void autonomous() {
       move(-550, 285);
       pros::delay(500);
       BackPiston.set_value(true);
+      pros::delay(500);
+      RingIntake.move(127);
       //moveCoords(1000, 300, true, 90);
       stopHold();
     }

@@ -13,6 +13,7 @@ extern pros::Motor RingIntake;
 //extern pros::ADIDigitalOut FrontPiston;
 extern pros::ADIDigitalOut FrontPiston;
 extern pros::ADIDigitalOut BackPiston;
+extern pros::ADIDigitalOut Tilter;
 
 extern pros::Vision Camera;
 
