@@ -32,13 +32,14 @@ void backClamp() {
       } else {
 
         Tilter.set_value(isBackClamp);
-        pros::delay(300);
+        pros::delay(350);
         BackPiston.set_value(isBackClamp);
         isBackClamp = !isBackClamp;
 
       }
     }
     buttonL2Prev = CONTROLLER.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+    pros::delay(5);
   }
 }
 
@@ -132,11 +133,11 @@ void opcontrol() {
         }
 
         if (ringIntakeUp && !buttonR1Prev) {
-            isConveyerUp ? (RingIntake.move(127)) : RingIntake.move(0);
+            isConveyerUp ? (RingIntake.move(-127)) : RingIntake.move(0);
             isConveyerUp = !isConveyerUp;
         }
         if (ringIntakeDown && !buttonL1Prev) {
-            isConveyerDown ? RingIntake.move(-127) : RingIntake.move(0);
+            isConveyerDown ? RingIntake.move(127) : RingIntake.move(0);
             isConveyerDown = !isConveyerDown;
         }
         if (balance && !buttonAPrev) {
